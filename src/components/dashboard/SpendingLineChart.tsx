@@ -23,9 +23,10 @@ export function SpendingLineChart() {
 
     // Calculate cumulative spending per day
     const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
-    const dailyData: { day: number; expenses: number; income: number; cumulative: number }[] = [];
+    const dailyData: { day: number; expenses: number; income: number; cumulativeExpenses: number; cumulativeIncome: number; netBalance: number }[] = [];
 
-    let cumulativeExpenses = 0;
+    let currentExpenses = 0;
+    let currentIncome = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dayTransactions = transactions.filter((t) => {
@@ -41,13 +42,17 @@ export function SpendingLineChart() {
             .filter((t) => t.type === 'income')
             .reduce((sum, t) => sum + t.amount, 0);
 
-        cumulativeExpenses += dayExpenses;
+        currentExpenses += dayExpenses;
+        currentIncome += dayIncome;
+        const netBalance = currentIncome - currentExpenses;
 
         dailyData.push({
             day,
             expenses: dayExpenses,
             income: dayIncome,
-            cumulative: cumulativeExpenses,
+            cumulativeExpenses: currentExpenses,
+            cumulativeIncome: currentIncome,
+            netBalance,
         });
     }
 
@@ -80,7 +85,7 @@ export function SpendingLineChart() {
 
     return (
         <Card>
-            <CardHeader title="Spending Over Time" subtitle="Daily cumulative expenses" />
+            <CardHeader title="Cash Flow & Spending" subtitle="Cumulative income, expenses, and net balance" />
             <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyData}>
@@ -100,8 +105,8 @@ export function SpendingLineChart() {
                         <Legend />
                         <Line
                             type="monotone"
-                            dataKey="cumulative"
-                            name="Cumulative Expenses"
+                            dataKey="cumulativeExpenses"
+                            name="Expenses"
                             stroke="#ef4444"
                             strokeWidth={2}
                             dot={false}
@@ -109,9 +114,9 @@ export function SpendingLineChart() {
                         />
                         <Line
                             type="monotone"
-                            dataKey="income"
-                            name="Daily Income"
-                            stroke="#10b981"
+                            dataKey="netBalance"
+                            name="Net Balance"
+                            stroke="#3b82f6"
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 6 }}

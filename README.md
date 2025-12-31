@@ -7,11 +7,11 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 ## Features
 
 ### 📊 Dashboard
-- Total income, expenses, and net balance at a glance
-- Expense breakdown pie chart by category
-- Spending trend line chart
-- Budget progress overview
-- Recent transactions quick view
+- **Dual Balances**: Current Balance (spendable) vs Net Balance (total wealth)
+- **Expense breakdown** pie chart by category
+- **Spending trend** line chart (Simplified focus on income vs expenses)
+- **Budget progress** overview
+- **Recent transactions** quick view
 
 ### 💰 Transactions
 - Add income and expense transactions
@@ -40,11 +40,18 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 - Projected year-end savings
 
 ### 🎯 Savings Goals
-- Create multiple savings goals
-- Target amount and date
-- Monthly contribution tracking
-- Visual progress circles
-- On-track/behind-schedule indicators
+- **Target amount** and date tracking
+- **Monthly contribution** tracking
+- **Deposit / Withdraw** directly from transactions
+- **Visual progress** circles with on-track indicators
+- **Mandatory Goal Linking**: All savings are linked to specific goals for accuracy
+
+### 💸 Debt Tracker
+- **Multi-currency support** with automatic exchange rate conversion
+- **Partial Payments**: Track repayments over time with visual progress bars
+- **Transaction Integration**: Payments automatically create "Debt Payback" entries
+- **Dual-currency entry**: Record payments in debt currency and local currency simultaneously
+- **Total active debt** summary reflecting remaining balances
 
 ### 📋 Reports & Insights
 - Spending trend analysis
@@ -54,13 +61,13 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 - Full JSON backup
 
 ### ⚙️ Settings
-- Currency selection (USD, EUR, JPY, etc.)
-- Light/Dark/System theme
-- First day of financial month
-- High contrast mode
-- Large text mode
-- Backup/Restore data
-- Reset all data
+- **Currency selection** (USD, EUR, JPY, etc.)
+- **Privacy Mode**: Hide absolute financial values (balances/income) while keeping progress %
+- **Light/Dark/System theme**
+- **First day of financial month** (e.g., sync with salary date)
+- **High contrast** and **Large text** modes
+- **Backup/Restore** data via JSON
+- **Reset all data** utility
 
 ## Tech Stack
 
@@ -128,12 +135,11 @@ src/
 
 ## Privacy
 
-This app is 100% local-first:
-- All data stored in browser's IndexedDB
-- No external API calls
-- No authentication required
-- Works offline
-- Your financial data never leaves your device
+- **100% Client-side**: All data is stored securely in your browser's IndexedDB.
+- **Privacy Mode**: Mask absolute figures for use in public spaces.
+- **Offline First**: Most features work entirely without an internet connection.
+- **External APIs**: Uses `open.er-api.com` solely for fetching live currency exchange rates.
+- **No Data Collection**: Your financial data never leaves your device.
 
 ## License
 

@@ -243,6 +243,47 @@ export class BudgetPlannerDB extends Dexie {
     }
 
     /**
+     * Gets total income and expenses for a year
+     */
+    async getYearlyTotals(
+        year: number
+    ): Promise<{ income: number; expenses: number; savings: number }> {
+        const transactions = await this.getTransactionsForYear(year);
+
+        // Get IDs of categories to exclude (filter in memory as boolean indexing is limited)
+        const categories = await this.categories.toArray();
+        const excludedSet = new Set(
+            categories
+                .filter(c => c.excludeFromTotals)
+                .map(c => c.id!)
+        );
+
+        let income = 0;
+        let expenses = 0;
+        let savings = 0;
+
+        for (const tx of transactions) {
+            // Handle excluded categories (Savings)
+            if (excludedSet.has(tx.categoryId)) {
+                if (tx.type === 'expense') {
+                    savings += tx.amount; // Deposit to savings
+                } else {
+                    savings -= tx.amount; // Withdrawal from savings
+                }
+                continue;
+            }
+
+            if (tx.type === 'income') {
+                income += tx.amount;
+            } else {
+                expenses += tx.amount;
+            }
+        }
+
+        return { income, expenses, savings };
+    }
+
+    /**
      * Gets budget for a category in a specific month
      */
     async getBudgetForCategoryMonth(

@@ -92,6 +92,34 @@ export function useMonthlyTotals() {
 }
 
 /**
+ * Hook to get yearly totals for the selected year
+ */
+export function useYearlyTotals() {
+    const { selectedYear } = useDateStore();
+
+    const totals = useLiveQuery(
+        async () => {
+            const { income, expenses, savings } = await db.getYearlyTotals(selectedYear);
+            return {
+                income,
+                expenses,
+                savings,
+                net: income - expenses,
+            };
+        },
+        [selectedYear]
+    );
+
+    return {
+        income: totals?.income ?? 0,
+        expenses: totals?.expenses ?? 0,
+        savings: totals?.savings ?? 0,
+        net: totals?.net ?? 0,
+        isLoading: totals === undefined,
+    };
+}
+
+/**
  * Hook to get spending by category for the selected month
  */
 export function useCategorySpending() {

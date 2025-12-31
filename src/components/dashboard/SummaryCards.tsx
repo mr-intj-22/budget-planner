@@ -1,13 +1,13 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, Scale } from 'lucide-react';
 import { StatCard } from '../ui/Card';
-import { useMonthlyTotals } from '../../hooks/useTransactions';
+import { useYearlyTotals } from '../../hooks/useTransactions'; // Changed to Yearly
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
 import { useSettings } from '../../hooks/useSettings';
 import { formatCurrency } from '../../utils/currency';
 
 export function SummaryCards() {
-    const { income, expenses, savings, net, isLoading: isTotalsLoading } = useMonthlyTotals();
+    const { income, expenses, savings, net, isLoading: isTotalsLoading } = useYearlyTotals(); // Changed to Yearly
     const { totalSaved, overallProgress, isLoading: isGoalsLoading } = useSavingsGoals();
     const { settings } = useSettings();
 

@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useDateStore, MONTH_NAMES } from '../../stores/dateStore';
 import { useAppStore } from '../../stores/appStore';
-import { useMonthlyTotals } from '../../hooks/useTransactions';
+import { useYearlyTotals } from '../../hooks/useTransactions'; // Changed to useYearlyTotals
 import { useSettings } from '../../hooks/useSettings';
 import { formatCurrency } from '../../utils/currency';
 import { Button, IconButton } from '../ui/Button';
@@ -26,7 +26,7 @@ export function Header() {
     } = useDateStore();
 
     const { theme, setTheme, openTransactionModal } = useAppStore();
-    const { income, expenses, net } = useMonthlyTotals();
+    const { income, expenses, net } = useYearlyTotals(); // Changed to useYearlyTotals
     const { settings } = useSettings();
 
     const monthOptions = MONTH_NAMES.map((name, index) => ({
@@ -110,8 +110,8 @@ export function Header() {
                         Balance
                     </p>
                     <p className={`text-lg font-semibold ${net >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
                         }`}>
                         {formatCurrency(net, settings)}
                     </p>

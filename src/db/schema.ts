@@ -39,6 +39,7 @@ export interface Transaction {
     recurringType?: RecurringType;
     recurringInterval?: number;  // For custom recurring (e.g., every 2 weeks)
     savingsGoalId?: number;      // Link to a savings goal
+    debtId?: number;             // Link to a debt liability
     createdAt: Date;
     updatedAt: Date;
 }
@@ -71,6 +72,23 @@ export interface SavingsGoal {
     color: string;
     icon: string;
     isCompleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+// ============================================
+// Debt - Manual debt tracking with currency conversion
+// ============================================
+export interface Debt {
+    id?: number;
+    name: string;
+    description: string;
+    originalAmount: number;
+    paidAmount: number; // For partial payments
+    originalCurrency: string;
+    interestRate?: number;
+    dueDate?: Date;
+    isPaid: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -176,5 +194,6 @@ export interface BackupData {
     transactions: Transaction[];
     monthlyBudgets: MonthlyBudget[];
     savingsGoals: SavingsGoal[];
+    debts: Debt[];
     settings: AppSettings | null;
 }

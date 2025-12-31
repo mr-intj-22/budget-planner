@@ -36,11 +36,11 @@ interface AppState {
     // Delete confirmation
     deleteConfirmation: {
         isOpen: boolean;
-        type: 'transaction' | 'category' | 'goal' | 'all-data' | null;
+        type: 'transaction' | 'category' | 'goal' | 'debt' | 'all-data' | null;
         id: number | null;
         name: string;
     };
-    openDeleteConfirmation: (type: 'transaction' | 'category' | 'goal' | 'all-data', id: number | null, name: string) => void;
+    openDeleteConfirmation: (type: 'transaction' | 'category' | 'goal' | 'debt' | 'all-data', id: number | null, name: string) => void;
     closeDeleteConfirmation: () => void;
 
     // Toast notifications

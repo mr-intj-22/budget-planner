@@ -4,6 +4,7 @@ import { useAppStore } from '../../stores/appStore';
 import { useTransactionOperations } from '../../hooks/useTransactions';
 import { useCategoryOperations } from '../../hooks/useCategories';
 import { useSavingsGoalOperations } from '../../hooks/useSavingsGoals';
+import { useDebtOperations } from '../../hooks/useDebts';
 import { db } from '../../db/database';
 
 export function DeleteConfirmDialog() {
@@ -11,6 +12,7 @@ export function DeleteConfirmDialog() {
     const { deleteTransaction } = useTransactionOperations();
     const { deleteCategory } = useCategoryOperations();
     const { deleteGoal } = useSavingsGoalOperations();
+    const { deleteDebt } = useDebtOperations();
     const [isDeleting, setIsDeleting] = useState(false);
 
     const getTitle = () => {
@@ -21,6 +23,8 @@ export function DeleteConfirmDialog() {
                 return 'Delete Category';
             case 'goal':
                 return 'Delete Savings Goal';
+            case 'debt':
+                return 'Delete Debt';
             case 'all-data':
                 return 'Reset All Data';
             default:
@@ -36,6 +40,8 @@ export function DeleteConfirmDialog() {
                 return `Are you sure you want to delete the "${deleteConfirmation.name}" category? Make sure no transactions are using this category.`;
             case 'goal':
                 return `Are you sure you want to delete "${deleteConfirmation.name}"? All progress will be lost.`;
+            case 'debt':
+                return `Are you sure you want to delete "${deleteConfirmation.name}"? This will permanently remove it from your tracker.`;
             case 'all-data':
                 return 'This will permanently delete ALL your data including transactions, categories, budgets, and settings. This cannot be undone!';
             default:
@@ -64,6 +70,12 @@ export function DeleteConfirmDialog() {
                     if (deleteConfirmation.id) {
                         await deleteGoal(deleteConfirmation.id);
                         showToast('Goal deleted', 'success');
+                    }
+                    break;
+                case 'debt':
+                    if (deleteConfirmation.id) {
+                        await deleteDebt(deleteConfirmation.id);
+                        showToast('Debt deleted', 'success');
                     }
                     break;
                 case 'all-data':

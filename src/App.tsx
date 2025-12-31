@@ -9,6 +9,7 @@ import { YearlyOverview } from './pages/YearlyOverview';
 import { SavingsGoals } from './pages/SavingsGoals';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { Debts } from './pages/Debts';
 
 function App() {
     return (
@@ -21,6 +22,7 @@ function App() {
                     <Route path="monthly-budget" element={<MonthlyBudget />} />
                     <Route path="yearly-overview" element={<YearlyOverview />} />
                     <Route path="savings-goals" element={<SavingsGoals />} />
+                    <Route path="debts" element={<Debts />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="settings" element={<Settings />} />
                 </Route>

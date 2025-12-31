@@ -4,6 +4,7 @@ import type {
     Transaction,
     MonthlyBudget,
     SavingsGoal,
+    Debt,
     AppSettings,
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
@@ -24,6 +25,7 @@ export class BudgetPlannerDB extends Dexie {
     transactions!: Table<Transaction, number>;
     monthlyBudgets!: Table<MonthlyBudget, number>;
     savingsGoals!: Table<SavingsGoal, number>;
+    debts!: Table<Debt, number>;
     appSettings!: Table<AppSettings, number>;
 
     constructor() {
@@ -34,7 +36,7 @@ export class BudgetPlannerDB extends Dexie {
             // Primary key: ++id (auto-increment)
             // Indexed fields for querying
             categories: '++id, name, isDefault',
-            transactions: '++id, categoryId, date, type, [date+type]',
+            transactions: '++id, categoryId, date, type, debtId, [date+type]',
             monthlyBudgets: '++id, categoryId, year, month, [categoryId+year+month], [year+month]',
             savingsGoals: '++id, name, targetDate, isCompleted',
             appSettings: '++id',
@@ -254,6 +256,20 @@ export class BudgetPlannerDB extends Dexie {
         this.version(8).stores({}).upgrade(async tx => {
             await tx.table('appSettings').toCollection().modify({
                 hideFinancialValues: false
+            });
+        });
+
+        // Schema version 9 - Add debts table
+        this.version(9).stores({
+            debts: '++id, name, isPaid'
+        });
+
+        // Schema version 10 - Add paidAmount to debts
+        this.version(10).stores({}).upgrade(async tx => {
+            await tx.table('debts').toCollection().modify(debt => {
+                if (debt.paidAmount === undefined) {
+                    debt.paidAmount = 0;
+                }
             });
         });
 

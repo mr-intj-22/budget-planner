@@ -14,6 +14,7 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 - **Recent transactions** quick view
 
 ### 💰 Transactions
+![Transactions](resources/Transactions.png)
 - Add income and expense transactions
 - Categorize with customizable categories
 - Multiple payment methods
@@ -21,12 +22,14 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 - Duplicate and inline delete with undo
 
 ### 📁 Categories
+![Categories](resources/Categories.png)
 - 13 default categories with colors and icons
 - Add, edit, and delete custom categories
 - Color picker and icon selector
 - Per-category budget limits
 
 ### 📅 Monthly Budget
+![Monthly Budget](resources/MonthlyBudget.png)
 - Set budget per category for each month
 - Planned vs actual comparison
 - Overspending alerts with visual indicators
@@ -40,6 +43,7 @@ A modern, privacy-first personal budgeting application that runs entirely in the
 - Projected year-end savings
 
 ### 🎯 Savings Goals
+![Savings Goals](resources/Savings.png)
 - **Target amount** and date tracking
 - **Monthly contribution** tracking
 - **Deposit / Withdraw** directly from transactions

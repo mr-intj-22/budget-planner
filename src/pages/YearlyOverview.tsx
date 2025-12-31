@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     BarChart,
     Bar,
@@ -64,8 +63,10 @@ export function YearlyOverview() {
         transactions
             .filter(t => t.type === 'expense')
             .forEach(t => {
-                const current = categoryTotals.get(t.categoryId) ?? 0;
-                categoryTotals.set(t.categoryId, current + t.amount);
+                if (t.categoryId) {
+                    const current = categoryTotals.get(t.categoryId) ?? 0;
+                    categoryTotals.set(t.categoryId, current + t.amount);
+                }
             });
 
         return { monthlyData, yearlyTotals, categoryTotals };
@@ -136,8 +137,8 @@ export function YearlyOverview() {
                 <Card>
                     <p className="text-sm text-slate-500 dark:text-slate-400">Net Savings</p>
                     <p className={`text-2xl font-bold ${yearlyTotals.net >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
                         }`}>
                         {formatCurrency(yearlyTotals.net, settings)}
                     </p>
@@ -231,8 +232,8 @@ export function YearlyOverview() {
                                             {formatCurrency(data?.expenses ?? 0, settings)}
                                         </td>
                                         <td className={`px-6 py-3 text-right font-medium ${(data?.net ?? 0) >= 0
-                                                ? 'text-emerald-600 dark:text-emerald-400'
-                                                : 'text-red-600 dark:text-red-400'
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : 'text-red-600 dark:text-red-400'
                                             }`}>
                                             {formatCurrency(data?.net ?? 0, settings)}
                                         </td>

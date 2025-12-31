@@ -1,4 +1,3 @@
-import React from 'react';
 import { ArrowRight, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card, CardHeader } from '../ui/Card';

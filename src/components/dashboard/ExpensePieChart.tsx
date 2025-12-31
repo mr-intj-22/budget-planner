@@ -1,4 +1,3 @@
-import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Card, CardHeader } from '../ui/Card';
 import { useCategories } from '../../hooks/useCategories';
@@ -89,7 +88,7 @@ export function ExpensePieChart() {
                             layout="horizontal"
                             verticalAlign="bottom"
                             align="center"
-                            formatter={(value, entry: any) => (
+                            formatter={(value) => (
                                 <span className="text-sm text-slate-600 dark:text-slate-300">{value}</span>
                             )}
                         />

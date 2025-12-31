@@ -1,4 +1,3 @@
-import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { TransactionList } from '../components/transactions/TransactionList';
@@ -48,8 +47,8 @@ export function Transactions() {
                 <div className="card p-4 text-center">
                     <p className="text-sm text-slate-500 dark:text-slate-400">Net</p>
                     <p className={`text-lg font-semibold ${net >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
                         }`}>
                         {formatCurrency(net, settings)}
                     </p>

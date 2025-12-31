@@ -56,7 +56,7 @@ export function BudgetProgressList() {
                         .split('-')
                         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
                         .join('') as keyof typeof Icons;
-                    const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }> | undefined;
+                    const IconComponent = Icons[iconName] as React.ElementType;
 
                     const isOverBudget = summary.percentUsed > 100;
                     const isWarning = summary.percentUsed >= 80 && summary.percentUsed < 100;
@@ -77,10 +77,10 @@ export function BudgetProgressList() {
                                 </div>
                                 <div className="text-right">
                                     <span className={`text-sm font-medium ${isOverBudget
-                                            ? 'text-red-600 dark:text-red-400'
-                                            : isWarning
-                                                ? 'text-amber-600 dark:text-amber-400'
-                                                : 'text-slate-600 dark:text-slate-400'
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : isWarning
+                                            ? 'text-amber-600 dark:text-amber-400'
+                                            : 'text-slate-600 dark:text-slate-400'
                                         }`}>
                                         {formatCurrency(summary.spent, settings)}
                                     </span>

@@ -1,4 +1,3 @@
-import React from 'react';
 import { SavingsGoalList } from '../components/savings/SavingsGoalList';
 
 export function SavingsGoals() {

@@ -11,11 +11,12 @@ const BACKUP_VERSION = 1;
  * Exports all data to a JSON backup file
  */
 export async function exportBackup(): Promise<string> {
-    const [categories, transactions, monthlyBudgets, savingsGoals, settings] = await Promise.all([
+    const [categories, transactions, monthlyBudgets, savingsGoals, debts, settings] = await Promise.all([
         db.categories.toArray(),
         db.transactions.toArray(),
         db.monthlyBudgets.toArray(),
         db.savingsGoals.toArray(),
+        db.debts.toArray(),
         db.appSettings.toArray(),
     ]);
 
@@ -26,6 +27,7 @@ export async function exportBackup(): Promise<string> {
         transactions,
         monthlyBudgets,
         savingsGoals,
+        debts,
         settings: settings[0] ?? null,
     };
 
@@ -69,13 +71,14 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
 
         // Import data in a transaction
         await db.transaction('rw',
-            [db.categories, db.transactions, db.monthlyBudgets, db.savingsGoals, db.appSettings],
+            [db.categories, db.transactions, db.monthlyBudgets, db.savingsGoals, db.debts, db.appSettings],
             async () => {
                 // Clear existing data
                 await db.categories.clear();
                 await db.transactions.clear();
                 await db.monthlyBudgets.clear();
                 await db.savingsGoals.clear();
+                await db.debts.clear();
                 await db.appSettings.clear();
 
                 // Import categories (convert dates)
@@ -114,6 +117,17 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
                         updatedAt: new Date(g.updatedAt),
                     }));
                     await db.savingsGoals.bulkAdd(goals);
+                }
+
+                // Import debts
+                if (backup.debts?.length) {
+                    const debts = backup.debts.map(d => ({
+                        ...d,
+                        dueDate: d.dueDate ? new Date(d.dueDate) : undefined,
+                        createdAt: new Date(d.createdAt),
+                        updatedAt: new Date(d.updatedAt),
+                    }));
+                    await db.debts.bulkAdd(debts);
                 }
 
                 // Import settings

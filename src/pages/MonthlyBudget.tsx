@@ -127,7 +127,7 @@ export function MonthlyBudget() {
                             .split('-')
                             .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
                             .join('') as keyof typeof Icons;
-                        const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }> | undefined;
+                        const IconComponent = Icons[iconName] as React.ElementType;
 
                         const isEditing = editingId === summary.categoryId;
                         const isOverBudget = summary.percentUsed > 100;

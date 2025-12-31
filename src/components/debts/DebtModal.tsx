@@ -55,7 +55,7 @@ export function DebtModal({ isOpen, onClose, debtId }: DebtModalProps) {
                     paidAmount: (debt.paidAmount || 0).toString(),
                     originalCurrency: debt.originalCurrency || settings?.currency || 'USD',
                     interestRate: debt.interestRate?.toString() ?? '',
-                    dueDate: debt.dueDate ? new Date(debt.dueDate).toISOString().split('T')[0] : '',
+                    dueDate: debt.dueDate ? new Date(debt.dueDate).toISOString().split('T')[0] || '' : '',
                     isPaid: debt.isPaid,
                 });
             }

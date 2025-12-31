@@ -1,4 +1,3 @@
-import React from 'react';
 import { PiggyBank, Plus } from 'lucide-react';
 import { Card, StatCard } from '../ui/Card';
 import { Button } from '../ui/Button';

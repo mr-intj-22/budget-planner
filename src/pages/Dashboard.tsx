@@ -1,4 +1,3 @@
-import React from 'react';
 import { useDateStore } from '../stores/dateStore';
 import { SummaryCards } from '../components/dashboard/SummaryCards';
 import { ExpensePieChart } from '../components/dashboard/ExpensePieChart';

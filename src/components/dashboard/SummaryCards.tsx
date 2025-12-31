@@ -1,4 +1,3 @@
-import React from 'react';
 import { TrendingUp, TrendingDown, Wallet, PiggyBank, Scale } from 'lucide-react';
 import { StatCard } from '../ui/Card';
 import { useYearlyTotals } from '../../hooks/useTransactions'; // Changed to Yearly

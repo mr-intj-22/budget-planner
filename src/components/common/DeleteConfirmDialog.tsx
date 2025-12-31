@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ConfirmDialog } from '../ui/Modal';
 import { useAppStore } from '../../stores/appStore';
 import { useTransactionOperations } from '../../hooks/useTransactions';

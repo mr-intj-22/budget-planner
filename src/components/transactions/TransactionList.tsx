@@ -1,4 +1,3 @@
-import React from 'react';
 import { Receipt } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { EmptyState } from '../ui/EmptyState';

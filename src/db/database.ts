@@ -222,6 +222,34 @@ export class BudgetPlannerDB extends Dexie {
             }
         });
 
+        // Schema version 7 - Remove Income category and General savings goal
+        this.version(7).stores({}).upgrade(async tx => {
+            // 1. Find and remove Income category
+            const incomeCat = await tx.table('categories').where('name').equals('Income').first();
+            if (incomeCat) {
+                // Unlink any transactions using it (though they should be type='income' already)
+                await tx.table('transactions')
+                    .where('categoryId').equals(incomeCat.id)
+                    .modify(t => {
+                        delete t.categoryId;
+                    });
+                await tx.table('categories').delete(incomeCat.id);
+            }
+
+            // 2. Find and remove "General" savings goal if it was a default/empty one
+            // We'll look for name "General" or similar if we seeded it previously.
+            // If the user created their own "General" we might delete it, 
+            // but usually, default seeds are marked.
+            // Let's look for "General" goal.
+            const generalGoal = await tx.table('savingsGoals').where('name').equals('General').first();
+            if (generalGoal) {
+                // Optional: only delete if it hasn't been used much? 
+                // Or if it was part of a specific seed version.
+                // User said "remove default general savings goal", implying it's unwanted baggage.
+                await tx.table('savingsGoals').delete(generalGoal.id);
+            }
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();

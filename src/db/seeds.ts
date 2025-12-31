@@ -125,31 +125,9 @@ export const defaultCategories: Category[] = [
         createdAt: new Date(),
         updatedAt: new Date(),
     },
-    {
-        name: 'Income',
-        color: '#10b981',
-        icon: 'wallet',
-        monthlyBudget: 0,
-        isDefault: true,
-        isSystemLocked: true, // Lock it so user can't delete it
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    },
 ];
 
-/**
- * Income category (special - not for expenses)
- */
-export const incomeCategory: Category = {
-    name: 'Income',
-    color: '#10b981',
-    icon: 'wallet',
-    monthlyBudget: 0,
-    isDefault: true,
-    isSystemLocked: true,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-};
+
 
 /**
  * Default application settings

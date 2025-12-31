@@ -133,6 +133,16 @@ export const defaultCategories: Category[] = [
         createdAt: new Date(),
         updatedAt: new Date(),
     },
+    {
+        name: 'Income',
+        color: '#10b981',
+        icon: 'wallet',
+        monthlyBudget: 0,
+        isDefault: true,
+        isSystemLocked: true, // Lock it so user can't delete it
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    },
 ];
 
 /**
@@ -144,6 +154,7 @@ export const incomeCategory: Category = {
     icon: 'wallet',
     monthlyBudget: 0,
     isDefault: true,
+    isSystemLocked: true,
     createdAt: new Date(),
     updatedAt: new Date(),
 };

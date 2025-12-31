@@ -54,6 +54,23 @@ export function TransactionModal() {
     const isCardPayment = formData.paymentMethod === 'credit' || formData.paymentMethod === 'debit';
     const isIncome = formData.type === 'income';
 
+    // Auto-set category when switching types
+    useEffect(() => {
+        if (formData.type === 'income') {
+            const incomeCategory = categories.find(c => c.name === 'Income');
+            if (incomeCategory) {
+                setFormData(prev => ({ ...prev, categoryId: incomeCategory.id! }));
+            }
+        } else if (formData.type === 'expense' && (!formData.categoryId || categories.find(c => c.id === formData.categoryId)?.name === 'Income')) {
+            // Reset to first expense category if switching back or if currently on Income
+            // Find a non-income default
+            const defaultCat = categories.find(c => c.name === 'Miscellaneous') ?? categories.find(c => c.name !== 'Income');
+            if (defaultCat) {
+                setFormData(prev => ({ ...prev, categoryId: defaultCat.id! }));
+            }
+        }
+    }, [formData.type, categories]);
+
     // Reset form when modal opens/closes or when editing different transaction
     useEffect(() => {
         if (isTransactionModalOpen) {
@@ -208,23 +225,25 @@ export function TransactionModal() {
                     autoFocus
                 />
 
-                {/* Category - Required for both types now */}
-                <Select
-                    label="Category"
-                    options={categoryOptions}
-                    value={formData.categoryId.toString()}
-                    onChange={(value) => {
-                        const categoryId = parseInt(value);
-                        setFormData({
-                            ...formData,
-                            categoryId,
-                            // Reset savings goal if changing away from Savings category
-                            savingsGoalId: undefined
-                        });
-                    }}
-                    placeholder="Select category"
-                    error={errors.categoryId}
-                />
+                {/* Category - Hidden for Income */}
+                {!isIncome && (
+                    <Select
+                        label="Category"
+                        options={categoryOptions}
+                        value={formData.categoryId.toString()}
+                        onChange={(value) => {
+                            const categoryId = parseInt(value);
+                            setFormData({
+                                ...formData,
+                                categoryId,
+                                // Reset savings goal if changing away from Savings category
+                                savingsGoalId: undefined
+                            });
+                        }}
+                        placeholder="Select category"
+                        error={errors.categoryId}
+                    />
+                )}
 
                 {/* Savings Goal Selection - Only if category is named "Savings" */}
                 {categories.find(c => c.id === formData.categoryId)?.name === 'Savings' && (

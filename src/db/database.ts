@@ -117,6 +117,23 @@ export class BudgetPlannerDB extends Dexie {
                 .modify({ excludeFromTotals: true });
         });
 
+        // Schema version 5 - Ensure Income category exists
+        this.version(5).stores({}).upgrade(async tx => {
+            const existing = await tx.table('categories').where('name').equals('Income').first();
+            if (!existing) {
+                await tx.table('categories').add({
+                    name: 'Income',
+                    color: '#10b981',
+                    icon: 'wallet',
+                    monthlyBudget: 0,
+                    isDefault: true,
+                    isSystemLocked: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            }
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();

@@ -49,6 +49,7 @@
 
 /* Component styles */
 @layer components {
+
   /* Card styles */
   .card {
     @apply bg-white dark:bg-slate-800 rounded-2xl shadow-card;
@@ -190,6 +191,7 @@
 
 /* Utility styles */
 @layer utilities {
+
   /* Glass effect */
   .glass {
     @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl;
@@ -214,10 +216,68 @@
   .animation-delay-100 {
     animation-delay: 100ms;
   }
+
   .animation-delay-200 {
     animation-delay: 200ms;
   }
+
   .animation-delay-300 {
     animation-delay: 300ms;
   }
+}
+
+/* Accessibility Modes */
+
+/* Large Text Mode - Scales up root font size */
+html.large-text {
+  font-size: 120%;
+}
+
+/* High Contrast Mode Overrides */
+html.high-contrast {
+  --color-bg-primary: 255 255 255;
+  --color-bg-secondary: 255 255 255;
+  --color-text-primary: 0 0 0;
+  --color-text-secondary: 0 0 0;
+}
+
+html.high-contrast body {
+  background-color: white !important;
+  color: black !important;
+}
+
+html.high-contrast .card {
+  background-color: white !important;
+  border: 2px solid black !important;
+  box-shadow: none !important;
+}
+
+html.high-contrast .text-slate-500,
+html.high-contrast .text-slate-400,
+html.high-contrast .text-slate-600 {
+  color: black !important;
+}
+
+/* High Contrast Dark */
+html.high-contrast.dark {
+  --color-bg-primary: 0 0 0;
+  --color-bg-secondary: 0 0 0;
+  --color-text-primary: 255 255 255;
+  --color-text-secondary: 255 255 255;
+}
+
+html.high-contrast.dark body {
+  background-color: black !important;
+  color: white !important;
+}
+
+html.high-contrast.dark .card {
+  background-color: black !important;
+  border: 2px solid white !important;
+}
+
+html.high-contrast.dark .text-slate-500,
+html.high-contrast.dark .text-slate-400,
+html.high-contrast.dark .text-slate-600 {
+  color: white !important;
 }

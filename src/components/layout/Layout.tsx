@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toast } from '../ui/EmptyState';
 import { useAppStore } from '../../stores/appStore';
+import { useSettings } from '../../hooks/useSettings';
 import { TransactionModal } from '../transactions/TransactionModal';
 import { CategoryModal } from '../categories/CategoryModal';
 import { SavingsGoalModal } from '../savings/SavingsGoalModal';
@@ -11,6 +12,7 @@ import { DeleteConfirmDialog } from '../common/DeleteConfirmDialog';
 
 export function Layout() {
     const { sidebarCollapsed, toast, hideToast, theme } = useAppStore();
+    const { settings } = useSettings();
 
     // Apply theme on mount and changes
     useEffect(() => {
@@ -30,6 +32,23 @@ export function Layout() {
             }
         }
     }, [theme]);
+
+    // Apply accessibility settings
+    useEffect(() => {
+        const root = document.documentElement;
+
+        if (settings?.largeTextMode) {
+            root.classList.add('large-text');
+        } else {
+            root.classList.remove('large-text');
+        }
+
+        if (settings?.highContrastMode) {
+            root.classList.add('high-contrast');
+        } else {
+            root.classList.remove('high-contrast');
+        }
+    }, [settings?.largeTextMode, settings?.highContrastMode]);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900">

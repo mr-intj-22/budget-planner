@@ -9,6 +9,7 @@ import { useDateStore } from '../../stores/dateStore';
 import { useCategories } from '../../hooks/useCategories';
 import { useTransaction, useTransactionOperations } from '../../hooks/useTransactions';
 import type { TransactionFormData, PaymentMethod, RecurringType } from '../../db/schema';
+import { useSavingsGoals } from '../../hooks/useSavingsGoals';
 import { formatDateForInput, parseDateInput } from '../../utils/dateUtils';
 
 const paymentMethods: { value: PaymentMethod; label: string }[] = [
@@ -34,12 +35,14 @@ const initialFormData: TransactionFormData = {
     paymentMethod: 'debit',
     cardName: '',
     isRecurring: false,
+    savingsGoalId: undefined,
 };
 
 export function TransactionModal() {
-    const { isTransactionModalOpen, editingTransactionId, closeTransactionModal, showToast } = useAppStore();
+    const { isTransactionModalOpen, editingTransactionId, closeTransactionModal, showToast, transactionModalInitialData } = useAppStore();
     const { setSelectedDate } = useDateStore();
     const { categories } = useCategories();
+    const { goals } = useSavingsGoals();
     const { transaction: editingTransaction } = useTransaction(editingTransactionId);
     const { addTransaction, updateTransaction } = useTransactionOperations();
 
@@ -65,6 +68,7 @@ export function TransactionModal() {
                     cardName: editingTransaction.cardName ?? '',
                     isRecurring: editingTransaction.isRecurring,
                     recurringType: editingTransaction.recurringType,
+                    savingsGoalId: editingTransaction.savingsGoalId,
                 });
             } else {
                 // Set default for new transaction
@@ -73,11 +77,12 @@ export function TransactionModal() {
                     ...initialFormData,
                     categoryId: defaultCategory?.id ?? categories[0]?.id ?? 0,
                     date: formatDateForInput(new Date()),
+                    ...transactionModalInitialData // Merge initial data if present (e.g. from Savings Goal card)
                 });
             }
             setErrors({});
         }
-    }, [isTransactionModalOpen, editingTransaction, categories]);
+    }, [isTransactionModalOpen, editingTransaction, categories, transactionModalInitialData]);
 
     const validate = (): boolean => {
         const newErrors: Partial<Record<keyof TransactionFormData, string>> = {};
@@ -87,8 +92,7 @@ export function TransactionModal() {
             newErrors.amount = 'Please enter a valid amount';
         }
 
-        // Only require category for expenses
-        if (!isIncome && !formData.categoryId) {
+        if (!formData.categoryId) {
             newErrors.categoryId = 'Please select a category';
         }
 
@@ -114,13 +118,14 @@ export function TransactionModal() {
             const transactionData = {
                 amount: parseFloat(formData.amount),
                 type: formData.type,
-                categoryId: isIncome ? 0 : formData.categoryId,
+                categoryId: formData.categoryId,
                 date: txDate,
                 description: formData.description,
                 paymentMethod: isIncome ? 'bank_transfer' as PaymentMethod : formData.paymentMethod,
                 cardName: isCardPayment && !isIncome ? formData.cardName : undefined,
                 isRecurring: formData.isRecurring,
                 recurringType: formData.isRecurring ? formData.recurringType : undefined,
+                savingsGoalId: formData.savingsGoalId,
             };
 
             if (editingTransactionId) {
@@ -203,15 +208,38 @@ export function TransactionModal() {
                     autoFocus
                 />
 
-                {/* Category - Only for expenses */}
-                {!isIncome && (
+                {/* Category - Required for both types now */}
+                <Select
+                    label="Category"
+                    options={categoryOptions}
+                    value={formData.categoryId.toString()}
+                    onChange={(value) => {
+                        const categoryId = parseInt(value);
+                        setFormData({
+                            ...formData,
+                            categoryId,
+                            // Reset savings goal if changing away from Savings category
+                            savingsGoalId: undefined
+                        });
+                    }}
+                    placeholder="Select category"
+                    error={errors.categoryId}
+                />
+
+                {/* Savings Goal Selection - Only if category is named "Savings" */}
+                {categories.find(c => c.id === formData.categoryId)?.name === 'Savings' && (
                     <Select
-                        label="Category"
-                        options={categoryOptions}
-                        value={formData.categoryId.toString()}
-                        onChange={(value) => setFormData({ ...formData, categoryId: parseInt(value) })}
-                        placeholder="Select category"
-                        error={errors.categoryId}
+                        label="Savings Goal (Optional)"
+                        options={[
+                            { value: '', label: 'General Savings' },
+                            ...goals.map(g => ({ value: g.id?.toString() ?? '', label: g.name }))
+                        ]}
+                        value={formData.savingsGoalId?.toString() ?? ''}
+                        onChange={(value) => setFormData({
+                            ...formData,
+                            savingsGoalId: value ? parseInt(value) : undefined
+                        })}
+                        placeholder="Select a goal"
                     />
                 )}
 

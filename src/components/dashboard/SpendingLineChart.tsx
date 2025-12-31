@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader } from '../ui/Card';
 import { useMonthlyTransactions } from '../../hooks/useTransactions';
+import { useCategories } from '../../hooks/useCategories';
 import { useSettings } from '../../hooks/useSettings';
 import { formatCurrency } from '../../utils/currency';
 import { useDateStore } from '../../stores/dateStore';
@@ -18,6 +19,7 @@ import { getDaysInMonth } from '../../utils/dateUtils';
 
 export function SpendingLineChart() {
     const { transactions, isLoading } = useMonthlyTransactions();
+    const { categories } = useCategories();
     const { selectedYear, selectedMonth } = useDateStore();
     const { settings } = useSettings();
 
@@ -25,13 +27,19 @@ export function SpendingLineChart() {
     const daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
     const dailyData: { day: number; expenses: number; income: number; cumulativeExpenses: number; cumulativeIncome: number; netBalance: number }[] = [];
 
+    // Create set of excluded category IDs for fast lookup
+    const excludedCategoryIds = new Set(
+        categories.filter(c => c.excludeFromTotals).map(c => c.id)
+    );
+
     let currentExpenses = 0;
     let currentIncome = 0;
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dayTransactions = transactions.filter((t) => {
             const txDay = new Date(t.date).getDate();
-            return txDay === day;
+            // Filter by day AND exclude excluded categories
+            return txDay === day && !excludedCategoryIds.has(t.categoryId);
         });
 
         const dayExpenses = dayTransactions

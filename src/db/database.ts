@@ -66,6 +66,53 @@ export class BudgetPlannerDB extends Dexie {
             }
         });
 
+        // Schema version 3 - Ensure Savings category exists
+        this.version(3).stores({}).upgrade(async tx => {
+            const existing = await tx.table('categories').where('name').equals('Savings').first();
+            if (!existing) {
+                await tx.table('categories').add({
+                    name: 'Savings',
+                    color: '#10b981',
+                    icon: 'piggy-bank',
+                    monthlyBudget: 500,
+                    isDefault: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            }
+        });
+
+        // Schema version 3 - Ensure Savings category exists
+        this.version(3).stores({}).upgrade(async tx => {
+            const existing = await tx.table('categories').where('name').equals('Savings').first();
+            if (!existing) {
+                await tx.table('categories').add({
+                    name: 'Savings',
+                    color: '#10b981',
+                    icon: 'piggy-bank',
+                    monthlyBudget: 500,
+                    isDefault: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            }
+        });
+
+        // Schema version 4 - Add savingsGoalId index and update Category flags
+        this.version(4).stores({
+            transactions: '++id, categoryId, date, type, savingsGoalId, [date+type]'
+        }).upgrade(async tx => {
+            // 1. Set Debt Payback to NOT exclude from totals (it is an expense)
+            await tx.table('categories')
+                .where('name').equals('Debt Payback')
+                .modify({ excludeFromTotals: false });
+
+            // 2. Set Savings to EXCLUDE from totals (it is a transfer)
+            await tx.table('categories')
+                .where('name').equals('Savings')
+                .modify({ excludeFromTotals: true });
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();
@@ -142,9 +189,11 @@ export class BudgetPlannerDB extends Dexie {
         const spending = new Map<number, number>();
 
         for (const tx of transactions) {
+            const current = spending.get(tx.categoryId) ?? 0;
             if (tx.type === 'expense') {
-                const current = spending.get(tx.categoryId) ?? 0;
                 spending.set(tx.categoryId, current + tx.amount);
+            } else if (tx.type === 'income') {
+                spending.set(tx.categoryId, current - tx.amount);
             }
         }
 
@@ -157,13 +206,32 @@ export class BudgetPlannerDB extends Dexie {
     async getMonthlyTotals(
         year: number,
         month: number
-    ): Promise<{ income: number; expenses: number }> {
+    ): Promise<{ income: number; expenses: number; savings: number }> {
         const transactions = await this.getTransactionsForMonth(year, month);
+
+        // Get IDs of categories to exclude (filter in memory as boolean indexing is limited)
+        const categories = await this.categories.toArray();
+        const excludedSet = new Set(
+            categories
+                .filter(c => c.excludeFromTotals)
+                .map(c => c.id!)
+        );
 
         let income = 0;
         let expenses = 0;
+        let savings = 0;
 
         for (const tx of transactions) {
+            // Handle excluded categories (Savings)
+            if (excludedSet.has(tx.categoryId)) {
+                if (tx.type === 'expense') {
+                    savings += tx.amount; // Deposit to savings
+                } else {
+                    savings -= tx.amount; // Withdrawal from savings
+                }
+                continue;
+            }
+
             if (tx.type === 'income') {
                 income += tx.amount;
             } else {
@@ -171,7 +239,7 @@ export class BudgetPlannerDB extends Dexie {
             }
         }
 
-        return { income, expenses };
+        return { income, expenses, savings };
     }
 
     /**

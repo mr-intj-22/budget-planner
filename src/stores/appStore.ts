@@ -19,7 +19,8 @@ interface AppState {
     // Modal states
     isTransactionModalOpen: boolean;
     editingTransactionId: number | null;
-    openTransactionModal: (transactionId?: number) => void;
+    transactionModalInitialData: any | null;
+    openTransactionModal: (transactionId?: number, initialData?: any) => void;
     closeTransactionModal: () => void;
 
     isCategoryModalOpen: boolean;
@@ -67,13 +68,16 @@ export const useAppStore = create<AppState>()(
             // Transaction Modal
             isTransactionModalOpen: false,
             editingTransactionId: null,
-            openTransactionModal: (transactionId) => set({
+            transactionModalInitialData: null,
+            openTransactionModal: (transactionId, initialData) => set({
                 isTransactionModalOpen: true,
                 editingTransactionId: transactionId ?? null,
+                transactionModalInitialData: initialData ?? null,
             }),
             closeTransactionModal: () => set({
                 isTransactionModalOpen: false,
                 editingTransactionId: null,
+                transactionModalInitialData: null,
             }),
 
             // Category Modal

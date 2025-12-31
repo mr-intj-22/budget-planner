@@ -4,14 +4,13 @@ import * as Icons from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button, IconButton } from '../ui/Button';
 import { CircularProgress } from '../ui/ProgressBar';
-import { Modal } from '../ui/Modal';
-import { Input } from '../ui/Input';
 import type { SavingsGoal } from '../../db/schema';
 import { formatCurrency } from '../../utils/currency';
 import { getRelativeTime } from '../../utils/dateUtils';
 import { useSettings } from '../../hooks/useSettings';
 import { useAppStore } from '../../stores/appStore';
-import { useSavingsGoalOperations, calculateGoalProgress } from '../../hooks/useSavingsGoals';
+import { calculateGoalProgress } from '../../hooks/useSavingsGoals';
+import { useCategories } from '../../hooks/useCategories'; // Added
 
 interface SavingsGoalCardProps {
     goal: SavingsGoal;
@@ -19,10 +18,12 @@ interface SavingsGoalCardProps {
 
 export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
     const { settings } = useSettings();
-    const { openSavingsGoalModal, openDeleteConfirmation, showToast } = useAppStore();
-    const { addContribution } = useSavingsGoalOperations();
-    const [isContributionModalOpen, setIsContributionModalOpen] = useState(false);
-    const [contributionAmount, setContributionAmount] = useState('');
+    const { openTransactionModal, openSavingsGoalModal, openDeleteConfirmation } = useAppStore();
+    const { categories } = useCategories(); // Added
+
+    // Find Savings category ID
+    const savingsCategory = categories.find(c => c.name === 'Savings');
+    const savingsCategoryId = savingsCategory?.id;
 
     const { progress, remaining, daysRemaining, onTrack } = calculateGoalProgress(goal);
 
@@ -106,8 +107,8 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
 
                         <div className="flex items-center gap-4 mt-2 text-sm">
                             <span className={`flex items-center gap-1 ${remaining <= 0
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-slate-500 dark:text-slate-400'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-slate-500 dark:text-slate-400'
                                 }`}>
                                 {remaining > 0 ? `${formatCurrency(remaining, settings)} to go` : 'Goal reached!'}
                             </span>
@@ -120,8 +121,8 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
                         {!goal.isCompleted && (
                             <div className="mt-3 flex items-center gap-2">
                                 <span className={`text-xs px-2 py-1 rounded-full ${onTrack
-                                        ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400'
-                                        : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400'
+                                    ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400'
                                     }`}>
                                     {onTrack ? 'On track' : 'Behind schedule'}
                                 </span>
@@ -133,50 +134,53 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
                     </div>
                 </div>
 
-                {/* Add Contribution Button */}
+                {/* Actions */}
                 {!goal.isCompleted && (
-                    <Button
-                        icon={Plus}
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setIsContributionModalOpen(true)}
-                        className="mt-4 w-full"
-                    >
-                        Add Contribution
-                    </Button>
+                    <div className="flex gap-2 mt-4">
+                        <Button
+                            icon={Plus}
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                                // Find 'Savings' category
+                                // Note: We don't have direct access to categories here, need to fetch or assume.
+                                // Better to let TransactionModal handle default if ID missing, or fetch here.
+                                // Ideally we pass the category ID. For now let's use a hook or context?
+                                // Actually, we can just Open modal and let user confirm category if needed, 
+                                // BUT requirement is "take value from savings category".
+                                // We really should pre-select 'Savings'.
+                                // Let's try to find it via a new hook call or passed prop?
+                                // UseCategories is not here. Let's add it.
+                                openTransactionModal(undefined, {
+                                    type: 'expense', // Deposit to savings = Expense from checking
+                                    description: `Deposit to ${goal.name}`,
+                                    savingsGoalId: goal.id,
+                                    categoryId: savingsCategoryId,
+                                });
+                            }}
+                        >
+                            Deposit
+                        </Button>
+                        <Button
+                            icon={Icons.Minus}
+                            variant="secondary"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                                openTransactionModal(undefined, {
+                                    type: 'income', // Withdraw from savings = Income to checking
+                                    description: `Withdraw from ${goal.name}`,
+                                    savingsGoalId: goal.id,
+                                    categoryId: savingsCategoryId,
+                                });
+                            }}
+                        >
+                            Withdraw
+                        </Button>
+                    </div>
                 )}
             </Card>
-
-            {/* Contribution Modal */}
-            <Modal
-                isOpen={isContributionModalOpen}
-                onClose={() => setIsContributionModalOpen(false)}
-                title={`Add to ${goal.name}`}
-                size="sm"
-            >
-                <Input
-                    label="Contribution Amount"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="100"
-                    value={contributionAmount}
-                    onChange={(e) => setContributionAmount(e.target.value)}
-                    autoFocus
-                />
-                <div className="flex gap-3 mt-4">
-                    <Button
-                        variant="secondary"
-                        onClick={() => setIsContributionModalOpen(false)}
-                        fullWidth
-                    >
-                        Cancel
-                    </Button>
-                    <Button onClick={handleAddContribution} fullWidth>
-                        Add
-                    </Button>
-                </div>
-            </Modal>
         </>
     );
 }

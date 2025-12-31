@@ -38,6 +38,7 @@ export interface Transaction {
     isRecurring: boolean;
     recurringType?: RecurringType;
     recurringInterval?: number;  // For custom recurring (e.g., every 2 weeks)
+    savingsGoalId?: number;      // Link to a savings goal
     createdAt: Date;
     updatedAt: Date;
 }
@@ -144,6 +145,7 @@ export interface TransactionFormData {
     cardName: string;            // Name of the card used
     isRecurring: boolean;
     recurringType?: RecurringType;
+    savingsGoalId?: number;
 }
 
 export interface CategoryFormData {

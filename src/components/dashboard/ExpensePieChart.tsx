@@ -13,6 +13,7 @@ export function ExpensePieChart() {
 
     // Prepare data for chart
     const chartData = categories
+        .filter(category => !category.excludeFromTotals)
         .map((category) => ({
             name: category.name,
             value: spending.get(category.id ?? 0) ?? 0,

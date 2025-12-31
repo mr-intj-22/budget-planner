@@ -71,10 +71,11 @@ export function useMonthlyTotals() {
 
     const totals = useLiveQuery(
         async () => {
-            const { income, expenses } = await db.getMonthlyTotals(selectedYear, selectedMonth);
+            const { income, expenses, savings } = await db.getMonthlyTotals(selectedYear, selectedMonth);
             return {
                 income,
                 expenses,
+                savings,
                 net: income - expenses,
             };
         },
@@ -84,6 +85,7 @@ export function useMonthlyTotals() {
     return {
         income: totals?.income ?? 0,
         expenses: totals?.expenses ?? 0,
+        savings: totals?.savings ?? 0,
         net: totals?.net ?? 0,
         isLoading: totals === undefined,
     };
@@ -114,22 +116,99 @@ export function useTransactionOperations() {
         transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>
     ) => {
         const now = new Date();
-        return db.transactions.add({
-            ...transaction,
-            createdAt: now,
-            updatedAt: now,
+
+        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+            // Update savings goal if linked
+            if (transaction.savingsGoalId) {
+                const goal = await db.savingsGoals.get(transaction.savingsGoalId);
+                if (goal) {
+                    const contribution = transaction.type === 'expense'
+                        ? transaction.amount  // Deposit
+                        : -transaction.amount; // Withdrawal
+
+                    const newAmount = goal.currentAmount + contribution;
+                    // Check completion only if positive contribution? Or always check target?
+                    const isCompleted = newAmount >= goal.targetAmount;
+
+                    await db.savingsGoals.update(goal.id!, {
+                        currentAmount: newAmount,
+                        isCompleted,
+                    });
+                }
+            }
+
+            return db.transactions.add({
+                ...transaction,
+                createdAt: now,
+                updatedAt: now,
+            });
         });
     };
 
     const updateTransaction = async (id: number, updates: Partial<Transaction>) => {
-        return db.transactions.update(id, {
-            ...updates,
-            updatedAt: new Date(),
+        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+            const original = await db.transactions.get(id);
+            if (!original) throw new Error('Transaction not found');
+
+            // Revert original goal contribution if it existed
+            if (original.savingsGoalId) {
+                const goal = await db.savingsGoals.get(original.savingsGoalId);
+                if (goal) {
+                    const originalContrib = original.type === 'expense'
+                        ? original.amount
+                        : -original.amount;
+
+                    // Reversing means subtracting the contribution
+                    await db.savingsGoals.update(goal.id!, {
+                        currentAmount: goal.currentAmount - originalContrib
+                    });
+                }
+            }
+
+            // Apply new goal contribution if it exists
+            const newTx = { ...original, ...updates };
+            if (newTx.savingsGoalId) {
+                const goal = await db.savingsGoals.get(newTx.savingsGoalId);
+                if (goal) {
+                    const newContrib = newTx.type === 'expense'
+                        ? newTx.amount
+                        : -newTx.amount;
+
+                    const newAmount = goal.currentAmount + newContrib;
+                    const isCompleted = newAmount >= goal.targetAmount;
+
+                    await db.savingsGoals.update(goal.id!, {
+                        currentAmount: newAmount,
+                        isCompleted
+                    });
+                }
+            }
+
+            return db.transactions.update(id, {
+                ...updates,
+                updatedAt: new Date(),
+            });
         });
     };
 
     const deleteTransaction = async (id: number) => {
-        return db.transactions.delete(id);
+        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+            const original = await db.transactions.get(id);
+            if (original?.savingsGoalId) {
+                const goal = await db.savingsGoals.get(original.savingsGoalId);
+                if (goal) {
+                    const contribution = original.type === 'expense'
+                        ? original.amount
+                        : -original.amount;
+
+                    // Revert contribution
+                    await db.savingsGoals.update(goal.id!, {
+                        currentAmount: goal.currentAmount - contribution
+                    });
+                }
+            }
+            return db.transactions.delete(id);
+        });
     };
 
     const duplicateTransaction = async (id: number) => {
@@ -138,11 +217,11 @@ export function useTransactionOperations() {
 
         const now = new Date();
         const { id: _id, ...rest } = original;
-        return db.transactions.add({
+
+        // Use addTransaction to handle goal sync logic reuse
+        return addTransaction({
             ...rest,
             date: now,
-            createdAt: now,
-            updatedAt: now,
         });
     };
 

@@ -104,7 +104,7 @@ export function SpendingLineChart() {
 
     return (
         <Card>
-            <CardHeader title="Cash Flow & Spending" subtitle="Cumulative income, expenses, and balances" />
+            <CardHeader title="Cash Flow & Spending" subtitle="Cumulative income and expenses over the month" />
             <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyData}>
@@ -136,24 +136,6 @@ export function SpendingLineChart() {
                             dataKey="cumulativeExpenses"
                             name="Expenses"
                             stroke="#ef4444"
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 6 }}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="netBalance"
-                            name="Net Balance"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            dot={false}
-                            activeDot={{ r: 6 }}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="currentBalance"
-                            name="Current Balance"
-                            stroke="#6366f1"
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 6 }}

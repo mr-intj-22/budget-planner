@@ -59,9 +59,16 @@ export function TransactionModal() {
 
     // Auto-set category when switching types
     useEffect(() => {
-        if (formData.type === 'income' || formData.type === 'savings') {
-            // Clear category for income and savings - they use technical types
+        if (formData.type === 'income') {
+            // Clear category for income
             setFormData(prev => ({ ...prev, categoryId: 0 }));
+        } else if (formData.type === 'savings') {
+            // Clear category and ensure a goal is selected if available
+            setFormData(prev => ({
+                ...prev,
+                categoryId: 0,
+                savingsGoalId: prev.savingsGoalId || goals[0]?.id
+            }));
         } else if (formData.type === 'expense') {
             // Ensure we have a valid expense category
             if (!formData.categoryId) {
@@ -132,6 +139,11 @@ export function TransactionModal() {
         // Category required only if NOT Income and NOT Savings
         if (!isIncome && !isSavings && !formData.categoryId) {
             newErrors.categoryId = 'Please select a category';
+        }
+
+        // Savings Goal required for savings transactions
+        if (isSavings && !formData.savingsGoalId) {
+            newErrors.savingsGoalId = 'Please select a savings goal';
         }
 
         if (!formData.date) {
@@ -320,17 +332,15 @@ export function TransactionModal() {
                 {/* Savings Goal Selection - Only if type is Savings */}
                 {isSavings && (
                     <Select
-                        label="Savings Goal (Optional)"
-                        options={[
-                            { value: '', label: 'General Savings' },
-                            ...goals.map(g => ({ value: g.id?.toString() ?? '', label: g.name }))
-                        ]}
+                        label="Savings Goal"
+                        options={goals.map(g => ({ value: g.id?.toString() ?? '', label: g.name }))}
                         value={formData.savingsGoalId?.toString() ?? ''}
                         onChange={(value) => setFormData({
                             ...formData,
                             savingsGoalId: value ? parseInt(value) : undefined
                         })}
                         placeholder="Select a goal"
+                        error={errors.savingsGoalId}
                     />
                 )}
 

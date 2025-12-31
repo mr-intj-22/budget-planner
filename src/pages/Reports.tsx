@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { useState } from 'react';
+import { FileJson, FileSpreadsheet } from 'lucide-react';
 import {
     BarChart,
     Bar,
@@ -53,8 +53,11 @@ export function Reports() {
                 .filter(t => t.type === 'expense')
                 .reduce((sum, t) => sum + t.amount, 0);
 
-            const income = monthTransactions
-                .filter(t => t.type === 'income')
+            const income = transactions
+                .filter(t => {
+                    const txDate = new Date(t.date);
+                    return txDate.getMonth() === month && t.type === 'income';
+                })
                 .reduce((sum, t) => sum + t.amount, 0);
 
             return {
@@ -73,8 +76,10 @@ export function Reports() {
         transactions
             .filter(t => t.type === 'expense')
             .forEach(t => {
-                const current = categoryTotals.get(t.categoryId) ?? 0;
-                categoryTotals.set(t.categoryId, current + t.amount);
+                if (t.categoryId) {
+                    const current = categoryTotals.get(t.categoryId) ?? 0;
+                    categoryTotals.set(t.categoryId, current + t.amount);
+                }
             });
 
         return categories
@@ -192,7 +197,7 @@ export function Reports() {
 
             {/* Trend Chart */}
             <Card>
-                <CardHeader title="Spending Trend" subtitle={`${selectedYear} monthly breakdown`} />
+                <CardHeader title="Spending Trend" subtitle={`${selectedYear} monthly spending breakdown`} />
                 <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={trendData}>

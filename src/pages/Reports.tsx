@@ -3,6 +3,7 @@ import { FileJson, FileSpreadsheet } from 'lucide-react';
 import {
     BarChart,
     Bar,
+    Cell,
     LineChart,
     Line,
     XAxis,
@@ -259,7 +260,7 @@ export function Reports() {
                                 radius={[0, 4, 4, 0]}
                             >
                                 {topCategories?.map((entry, index) => (
-                                    <Bar key={index} dataKey="amount" fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                             </Bar>
                         </BarChart>

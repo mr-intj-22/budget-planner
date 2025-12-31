@@ -59,22 +59,17 @@ export function TransactionModal() {
 
     // Auto-set category when switching types
     useEffect(() => {
-        if (formData.type === 'income') {
-            const incomeCategory = categories.find(c => c.name === 'Income');
-            if (incomeCategory) {
-                setFormData(prev => ({ ...prev, categoryId: incomeCategory.id! }));
-            }
+        if (formData.type === 'income' || formData.type === 'savings') {
+            // Clear category for income and savings - they use technical types
+            setFormData(prev => ({ ...prev, categoryId: 0 }));
         } else if (formData.type === 'expense') {
-            // Ensure we are not on Income or Savings category
-            if (!formData.categoryId || categories.find(c => c.id === formData.categoryId)?.name === 'Income') {
-                const defaultCat = categories.find(c => c.name === 'Miscellaneous') ?? categories.find(c => c.name !== 'Income');
+            // Ensure we have a valid expense category
+            if (!formData.categoryId) {
+                const defaultCat = categories.find(c => c.name === 'Miscellaneous') ?? categories[0];
                 if (defaultCat) {
                     setFormData(prev => ({ ...prev, categoryId: defaultCat.id! }));
                 }
             }
-        } else if (formData.type === 'savings') {
-            // Clear category for savings
-            setFormData(prev => ({ ...prev, categoryId: 0 }));
         }
     }, [formData.type, categories]);
 
@@ -168,7 +163,7 @@ export function TransactionModal() {
             const transactionData = {
                 amount: finalAmount,
                 type: formData.type,
-                categoryId: isSavings ? undefined : formData.categoryId, // Ensure no category for savings
+                categoryId: (isIncome || isSavings) ? undefined : formData.categoryId,
                 date: txDate,
                 description: formData.description,
                 paymentMethod: isIncome ? 'bank_transfer' as PaymentMethod : formData.paymentMethod,

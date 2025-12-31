@@ -140,6 +140,7 @@ export const defaultSettings: AppSettings = {
     theme: 'system',
     highContrastMode: false,
     largeTextMode: false,
+    hideFinancialValues: false,
     createdAt: new Date(),
     updatedAt: new Date(),
 };

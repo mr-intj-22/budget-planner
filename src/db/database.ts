@@ -250,6 +250,13 @@ export class BudgetPlannerDB extends Dexie {
             }
         });
 
+        // Schema version 8 - Add hideFinancialValues to settings
+        this.version(8).stores({}).upgrade(async tx => {
+            await tx.table('appSettings').toCollection().modify({
+                hideFinancialValues: false
+            });
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();

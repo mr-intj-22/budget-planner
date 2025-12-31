@@ -1,4 +1,4 @@
-import React from 'react';
+import { AppSettings } from '../../db/schema';
 
 interface ProgressBarProps {
     value: number; // 0-100
@@ -8,6 +8,7 @@ interface ProgressBarProps {
     size?: 'sm' | 'md' | 'lg';
     animate?: boolean;
     className?: string;
+    settings?: AppSettings | null;
 }
 
 const sizeClasses = {
@@ -24,6 +25,7 @@ export function ProgressBar({
     size = 'md',
     animate = true,
     className = '',
+    settings,
 }: ProgressBarProps) {
     const percentage = Math.min(100, Math.max(0, (value / max) * 100));
 
@@ -48,7 +50,7 @@ export function ProgressBar({
             </div>
             {showLabel && (
                 <div className="flex justify-between mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span>{value.toLocaleString()}</span>
+                    <span>{settings?.hideFinancialValues ? '****' : value.toLocaleString()}</span>
                     <span>{percentage.toFixed(0)}%</span>
                 </div>
             )}

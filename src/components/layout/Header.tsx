@@ -1,10 +1,11 @@
-import React from 'react';
 import {
     ChevronLeft,
     ChevronRight,
     Sun,
     Moon,
     Plus,
+    Eye,
+    EyeOff,
 } from 'lucide-react';
 import { useDateStore, MONTH_NAMES } from '../../stores/dateStore';
 import { useAppStore } from '../../stores/appStore';
@@ -27,7 +28,7 @@ export function Header() {
 
     const { theme, setTheme, openTransactionModal } = useAppStore();
     const { income, expenses, net } = useYearlyTotals(); // Changed to useYearlyTotals
-    const { settings } = useSettings();
+    const { settings, updateSettings } = useSettings();
 
     const monthOptions = MONTH_NAMES.map((name, index) => ({
         value: index.toString(),
@@ -51,6 +52,10 @@ export function Header() {
             setTheme('light');
             document.documentElement.classList.remove('dark');
         }
+    };
+
+    const togglePrivacy = () => {
+        updateSettings({ hideFinancialValues: !settings?.hideFinancialValues });
     };
 
     return (
@@ -120,6 +125,13 @@ export function Header() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-3">
+                <IconButton
+                    icon={settings?.hideFinancialValues ? EyeOff : Eye}
+                    onClick={togglePrivacy}
+                    aria-label="Toggle privacy mode"
+                    title={settings?.hideFinancialValues ? "Show financial values" : "Hide financial values"}
+                />
+
                 <IconButton
                     icon={theme === 'dark' ? Sun : Moon}
                     onClick={toggleTheme}

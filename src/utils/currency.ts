@@ -11,6 +11,8 @@ export function formatCurrency(
     amount: number,
     settings?: AppSettings | null
 ): string {
+    if (settings?.hideFinancialValues) return '****';
+
     const locale = settings?.currencyLocale ?? 'en-US';
     const currency = settings?.currency ?? 'USD';
 
@@ -29,6 +31,7 @@ export function formatCurrencyWithSign(
     amount: number,
     settings?: AppSettings | null
 ): string {
+    if (settings?.hideFinancialValues) return (amount >= 0 ? '+' : '-') + '****';
     const formatted = formatCurrency(Math.abs(amount), settings);
     return amount >= 0 ? `+${formatted}` : `-${formatted}`;
 }
@@ -40,6 +43,8 @@ export function formatCompactCurrency(
     amount: number,
     settings?: AppSettings | null
 ): string {
+    if (settings?.hideFinancialValues) return '****';
+
     const locale = settings?.currencyLocale ?? 'en-US';
     const currency = settings?.currency ?? 'USD';
 

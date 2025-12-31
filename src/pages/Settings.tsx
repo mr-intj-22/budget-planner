@@ -189,6 +189,11 @@ export function Settings() {
                             onChange={(checked) => updateSettings({ largeTextMode: checked })}
                             label="Large text mode"
                         />
+                        <Toggle
+                            checked={settings?.hideFinancialValues ?? false}
+                            onChange={(checked) => updateSettings({ hideFinancialValues: checked })}
+                            label="Privacy mode (Hide financial values)"
+                        />
                     </div>
                 </div>
             </Card>

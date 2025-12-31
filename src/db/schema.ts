@@ -89,6 +89,7 @@ export interface AppSettings {
     theme: ThemeMode;
     highContrastMode: boolean;
     largeTextMode: boolean;
+    hideFinancialValues: boolean; // Privacy mode: hide absolute numbers
     createdAt: Date;
     updatedAt: Date;
 }

@@ -30,16 +30,15 @@ export function CategoryCard({ category, showBudgetProgress = true }: CategoryCa
         .split('-')
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join('') as keyof typeof Icons;
-    const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }> | undefined;
+    const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string; style?: React.CSSProperties }> | undefined;
 
     const handleEdit = () => {
         openCategoryModal(category.id);
     };
 
     const handleDelete = () => {
-        if (category.isDefault) {
-            return; // Can't delete default categories
-        }
+        // Default categories can now be deleted
+        // Check referential integrity is handled by the hook
         openDeleteConfirmation('category', category.id!, category.name);
     };
 
@@ -53,15 +52,13 @@ export function CategoryCard({ category, showBudgetProgress = true }: CategoryCa
                     onClick={handleEdit}
                     aria-label={`Edit ${category.name}`}
                 />
-                {!category.isDefault && (
-                    <IconButton
-                        icon={Trash2}
-                        size="sm"
-                        onClick={handleDelete}
-                        aria-label={`Delete ${category.name}`}
-                        className="hover:text-red-500"
-                    />
-                )}
+                <IconButton
+                    icon={Trash2}
+                    size="sm"
+                    onClick={handleDelete}
+                    aria-label={`Delete ${category.name}`}
+                    className="hover:text-red-500"
+                />
             </div>
 
             <div className="flex items-start gap-4">
@@ -93,8 +90,8 @@ export function CategoryCard({ category, showBudgetProgress = true }: CategoryCa
                                     {formatCurrency(spent, settings)} spent
                                 </span>
                                 <span className={`font-medium ${remaining >= 0
-                                        ? 'text-emerald-600 dark:text-emerald-400'
-                                        : 'text-red-600 dark:text-red-400'
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-red-600 dark:text-red-400'
                                     }`}>
                                     {remaining >= 0 ? formatCurrency(remaining, settings) + ' left' : formatCurrency(Math.abs(remaining), settings) + ' over'}
                                 </span>

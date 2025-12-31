@@ -67,11 +67,11 @@ export function useCategoryOperations() {
             throw new Error(`Cannot delete category with ${transactionCount} transactions`);
         }
 
-        // Check if it's a default category
-        const category = await db.categories.get(id);
-        if (category?.isDefault) {
-            throw new Error('Cannot delete default categories');
-        }
+        // Default categories check removed
+        // const category = await db.categories.get(id);
+        // if (category?.isDefault) {
+        //     throw new Error('Cannot delete default categories');
+        // }
 
         return db.categories.delete(id);
     };

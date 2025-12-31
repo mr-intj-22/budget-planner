@@ -22,7 +22,7 @@ export interface Category {
 // ============================================
 // Transaction - Income or expense entries
 // ============================================
-export type TransactionType = 'income' | 'expense';
+export type TransactionType = 'income' | 'expense' | 'savings';
 export type RecurringType = 'monthly' | 'yearly' | 'weekly' | 'custom';
 export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'bank_transfer' | 'other';
 
@@ -30,7 +30,7 @@ export interface Transaction {
     id?: number;
     amount: number;
     type: TransactionType;
-    categoryId: number;
+    categoryId?: number; // Optional for savings
     date: Date;
     description: string;
     paymentMethod: PaymentMethod;

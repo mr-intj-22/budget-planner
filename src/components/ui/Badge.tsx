@@ -92,17 +92,35 @@ export function CategoryBadge({
 
 // Transaction type badge
 interface TypeBadgeProps {
-    type: 'income' | 'expense';
+    type: 'income' | 'expense' | 'savings';
 }
 
 export function TypeBadge({ type }: TypeBadgeProps) {
+    const getColor = () => {
+        switch (type) {
+            case 'income': return '#10b981';
+            case 'expense': return '#ef4444';
+            case 'savings': return '#3b82f6';
+            default: return '#6b7280';
+        }
+    };
+
+    const getLabel = () => {
+        switch (type) {
+            case 'income': return 'Income';
+            case 'expense': return 'Expense';
+            case 'savings': return 'Savings';
+            default: return type;
+        }
+    };
+
     return (
         <Badge
-            color={type === 'income' ? '#10b981' : '#ef4444'}
+            color={getColor()}
             variant="subtle"
             size="sm"
         >
-            {type === 'income' ? 'Income' : 'Expense'}
+            {getLabel()}
         </Badge>
     );
 }

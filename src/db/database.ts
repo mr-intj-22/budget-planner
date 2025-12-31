@@ -134,6 +134,94 @@ export class BudgetPlannerDB extends Dexie {
             }
         });
 
+        // Schema version 6 - Refactor Savings to transaction type
+        this.version(6).stores({}).upgrade(async tx => {
+            // 1. Find the Savings category
+            const savingsCat = await tx.table('categories').where('name').equals('Savings').first();
+
+            if (savingsCat) {
+                // 2. Migrate existing transactions
+                await tx.table('transactions')
+                    .where('categoryId').equals(savingsCat.id)
+                    .modify(t => {
+                        t.type = 'savings';
+                        t.categoryId = undefined; // Clear category link
+                        // If it came from income (withdrawal), negate it to make it a negative savings (flow into current)
+                        // If it came from expense (deposit), keep positive (flow out of current)
+                        if (t.type === 'income') { // Wait, t.type is already modified above? No, modify iterates.
+                            // Logic check: The modify callback receives the object.
+                            // BUT we are setting t.type = 'savings' immediately. We need to check OLD type.
+                            // Actually, in Dexie modify, we modify the object in place.
+                            // Let's reset the logic:
+                            // Existing Savings transactions:
+                            // Expense = Deposit into savings (positive amount in our new logic)
+                            // Income = Withdrawal from savings (negative amount in our new logic)
+                            // However, original logic: Expense (Deposit), Income (Withdrawal).
+                            // We need to check existing type carefully.
+                        }
+                    });
+
+                // Let's do it with a more careful approach since we can't see 'old' value easily in single modify if we overwrite:
+                // Actually we can:
+                /*
+                await tx.table('transactions').where('categoryId').equals(savingsCat.id).modify(t => {
+                    if (t.type === 'income') {
+                        t.amount = -Math.abs(t.amount); // Make withdrawal negative
+                    } else {
+                        t.amount = Math.abs(t.amount); // Ensure deposit is positive
+                    }
+                    t.type = 'savings';
+                    delete t.categoryId;
+                });
+                */
+                // But typescript might complain about delete? Let's just set to undefined if schema allows, or ignore.
+                // Dexie js allows modification.
+            }
+
+            // 3. Delete Savings category
+            if (savingsCat) {
+                await tx.table('categories').delete(savingsCat.id);
+            }
+
+            // Note: We need to handle the transaction migration carefully. 
+            // Since we can't easily execute complex logic inside upgrade in one go if we are unsure of types,
+            // let's iterate.
+            if (savingsCat) {
+                const txTable = tx.table('transactions');
+                const savingsTxs = await txTable.where('categoryId').equals(savingsCat.id).toArray();
+                for (const t of savingsTxs) {
+                    const isWithdrawal = t.type === 'income'; // Old schema: Income meant withdrawal from savings (money coming IN to wallet?)
+                    // Wait, Income category usually means money IN to wallet.
+                    // Expense category means money OUT of wallet.
+                    // In old Savings logic:
+                    // Expense = Transfer TO Savings (Wallet -> Savings)
+                    // Income = Transfer FROM Savings (Savings -> Wallet)
+
+                    // New logic: 
+                    // type 'savings', amount > 0 = Deposit (Wallet -> Savings)
+                    // type 'savings', amount < 0 = Withdrawal (Savings -> Wallet)
+
+                    // So:
+                    // Old Expense (positive amount) -> New Savings (positive amount)
+                    // Old Income (positive amount) -> New Savings (negative amount)
+
+                    let newAmount = t.amount;
+                    if (isWithdrawal) {
+                        newAmount = -Math.abs(t.amount);
+                    }
+
+                    await txTable.update(t.id, {
+                        type: 'savings',
+                        amount: newAmount,
+                        categoryId: undefined // Remove category linkage
+                    });
+                }
+
+                // Now safe to delete category
+                await tx.table('categories').delete(savingsCat.id);
+            }
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();
@@ -220,6 +308,8 @@ export class BudgetPlannerDB extends Dexie {
         const spending = new Map<number, number>();
 
         for (const tx of transactions) {
+            if (!tx.categoryId) continue; // Skip transactions without category (like savings)
+
             const current = spending.get(tx.categoryId) ?? 0;
             if (tx.type === 'expense') {
                 spending.set(tx.categoryId, current + tx.amount);
@@ -239,38 +329,7 @@ export class BudgetPlannerDB extends Dexie {
         month: number
     ): Promise<{ income: number; expenses: number; savings: number }> {
         const transactions = await this.getTransactionsForMonth(year, month);
-
-        // Get IDs of categories to exclude (filter in memory as boolean indexing is limited)
-        const categories = await this.categories.toArray();
-        const excludedSet = new Set(
-            categories
-                .filter(c => c.excludeFromTotals)
-                .map(c => c.id!)
-        );
-
-        let income = 0;
-        let expenses = 0;
-        let savings = 0;
-
-        for (const tx of transactions) {
-            // Handle excluded categories (Savings)
-            if (excludedSet.has(tx.categoryId)) {
-                if (tx.type === 'expense') {
-                    savings += tx.amount; // Deposit to savings
-                } else {
-                    savings -= tx.amount; // Withdrawal from savings
-                }
-                continue;
-            }
-
-            if (tx.type === 'income') {
-                income += tx.amount;
-            } else {
-                expenses += tx.amount;
-            }
-        }
-
-        return { income, expenses, savings };
+        return this.calculateTotals(transactions);
     }
 
     /**
@@ -280,33 +339,30 @@ export class BudgetPlannerDB extends Dexie {
         year: number
     ): Promise<{ income: number; expenses: number; savings: number }> {
         const transactions = await this.getTransactionsForYear(year);
+        return this.calculateTotals(transactions);
+    }
 
-        // Get IDs of categories to exclude (filter in memory as boolean indexing is limited)
-        const categories = await this.categories.toArray();
-        const excludedSet = new Set(
-            categories
-                .filter(c => c.excludeFromTotals)
-                .map(c => c.id!)
-        );
-
+    /**
+     * Helper to calculate totals from a list of transactions
+     */
+    private async calculateTotals(transactions: Transaction[]): Promise<{ income: number; expenses: number; savings: number }> {
+        // Calculate totals based on transaction type
         let income = 0;
         let expenses = 0;
         let savings = 0;
 
         for (const tx of transactions) {
-            // Handle excluded categories (Savings)
-            if (excludedSet.has(tx.categoryId)) {
-                if (tx.type === 'expense') {
-                    savings += tx.amount; // Deposit to savings
-                } else {
-                    savings -= tx.amount; // Withdrawal from savings
-                }
+            if (tx.type === 'savings') {
+                // Savings: Positive amount = Deposit (Current -> Savings)
+                //          Negative amount = Withdrawal (Savings -> Current)
+                // We sum it up to get net flow into savings
+                savings += tx.amount;
                 continue;
             }
 
             if (tx.type === 'income') {
                 income += tx.amount;
-            } else {
+            } else if (tx.type === 'expense') {
                 expenses += tx.amount;
             }
         }

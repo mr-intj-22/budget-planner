@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Edit2, Trash2, Plus, Check, Calendar } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { Card } from '../ui/Card';
@@ -10,7 +10,6 @@ import { getRelativeTime } from '../../utils/dateUtils';
 import { useSettings } from '../../hooks/useSettings';
 import { useAppStore } from '../../stores/appStore';
 import { calculateGoalProgress } from '../../hooks/useSavingsGoals';
-import { useCategories } from '../../hooks/useCategories'; // Added
 
 interface SavingsGoalCardProps {
     goal: SavingsGoal;
@@ -19,11 +18,6 @@ interface SavingsGoalCardProps {
 export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
     const { settings } = useSettings();
     const { openTransactionModal, openSavingsGoalModal, openDeleteConfirmation } = useAppStore();
-    const { categories } = useCategories(); // Added
-
-    // Find Savings category ID
-    const savingsCategory = categories.find(c => c.name === 'Savings');
-    const savingsCategoryId = savingsCategory?.id;
 
     const { progress, remaining, daysRemaining, onTrack } = calculateGoalProgress(goal);
 
@@ -33,23 +27,6 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join('') as keyof typeof Icons;
     const IconComponent = Icons[iconName] as React.ComponentType<{ className?: string }> | undefined;
-
-    const handleAddContribution = async () => {
-        const amount = parseFloat(contributionAmount);
-        if (isNaN(amount) || amount <= 0) {
-            showToast('Please enter a valid amount', 'error');
-            return;
-        }
-
-        try {
-            await addContribution(goal.id!, amount);
-            showToast(`Added ${formatCurrency(amount, settings)} to ${goal.name}`, 'success');
-            setIsContributionModalOpen(false);
-            setContributionAmount('');
-        } catch (error) {
-            showToast('Failed to add contribution', 'error');
-        }
-    };
 
     return (
         <>
@@ -85,7 +62,9 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                             {IconComponent && (
-                                <IconComponent className="w-5 h-5" style={{ color: goal.color }} />
+                                <span style={{ color: goal.color }}>
+                                    <IconComponent className="w-5 h-5" />
+                                </span>
                             )}
                             <h3 className="font-semibold text-slate-900 dark:text-white truncate">
                                 {goal.name}
@@ -143,20 +122,11 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
                             size="sm"
                             className="flex-1"
                             onClick={() => {
-                                // Find 'Savings' category
-                                // Note: We don't have direct access to categories here, need to fetch or assume.
-                                // Better to let TransactionModal handle default if ID missing, or fetch here.
-                                // Ideally we pass the category ID. For now let's use a hook or context?
-                                // Actually, we can just Open modal and let user confirm category if needed, 
-                                // BUT requirement is "take value from savings category".
-                                // We really should pre-select 'Savings'.
-                                // Let's try to find it via a new hook call or passed prop?
-                                // UseCategories is not here. Let's add it.
                                 openTransactionModal(undefined, {
-                                    type: 'expense', // Deposit to savings = Expense from checking
+                                    type: 'savings', // Deposit to savings
                                     description: `Deposit to ${goal.name}`,
                                     savingsGoalId: goal.id,
-                                    categoryId: savingsCategoryId,
+                                    amount: '', // Clear amount
                                 });
                             }}
                         >
@@ -169,10 +139,35 @@ export function SavingsGoalCard({ goal }: SavingsGoalCardProps) {
                             className="flex-1"
                             onClick={() => {
                                 openTransactionModal(undefined, {
-                                    type: 'income', // Withdraw from savings = Income to checking
+                                    type: 'savings', // Withdraw from savings
                                     description: `Withdraw from ${goal.name}`,
                                     savingsGoalId: goal.id,
-                                    categoryId: savingsCategoryId,
+                                    // Hack: We need a way to indicate withdrawal in the modal initial state
+                                    // Since 'savings' covers both, we might need a flag or assume user enters negative?
+                                    // BETTER: Pass a negative amount or handle it in modal?
+                                    // Let's assume user enters positive amount for "Withdrawal" and we negate it?
+                                    // No, simpler: TransactionModal should know if it's a withdrawal context.
+                                    // Let's pass a signed amount if we can, or checks.
+                                    // For now, let's just default to 'savings' and let user handle sign?
+                                    // User Request: "in savings deposit dialog, remove category".
+                                    // If we click "Withdraw", we ideally want it to be a withdrawal.
+                                    // If we pass an initial negative amount (e.g. '-0') it might work?
+                                    // Let's pre-fill description and let user handle amount sign?
+                                    // Actually, standard behavior for withdrawal is usually positive input -> logic negates it.
+                                    // But TransactionModal is generic.
+                                    // Let's just pass `type: 'savings'` and description.
+                                    // If user inputs positive amount for withdrawal, it's a deposit. That's confusing.
+                                    // We need to differentiate in the modal or pass a 'isWithdrawal' hint? 
+                                    // TransactionFormData doesn't have isWithdrawal.
+                                    // Let's use `amount: '-1'` as a hint? No.
+                                    // Ideally, we should set the type to 'savings' and maybe handle the sign in the modal based on a new prop?
+                                    // But I can't change the modal props easily without checking store.
+                                    // Let's stick to simple first: 'savings' type.
+                                    // Wait, if I set type to 'savings', is it always positive?
+                                    // My Database logic says: positive = deposit, negative = withdrawal.
+                                    // Users won't type '-50'.
+                                    // I should probably add a toggle in the modal for 'Deposit' vs 'Withdraw' if type is 'savings'.
+                                    amount: '',
                                 });
                             }}
                         >

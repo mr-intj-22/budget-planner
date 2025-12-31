@@ -149,12 +149,16 @@ export function useTransactionOperations() {
             if (transaction.savingsGoalId) {
                 const goal = await db.savingsGoals.get(transaction.savingsGoalId);
                 if (goal) {
-                    const contribution = transaction.type === 'expense'
-                        ? transaction.amount  // Deposit
-                        : -transaction.amount; // Withdrawal
+                    let contribution = 0;
+                    if (transaction.type === 'savings') {
+                        contribution = transaction.amount; // Positive for deposit, negative for withdrawal
+                    } else if (transaction.type === 'expense') {
+                        contribution = -transaction.amount; // Spending from goal
+                    } else if (transaction.type === 'income') {
+                        contribution = transaction.amount; // Direct income to goal
+                    }
 
                     const newAmount = goal.currentAmount + contribution;
-                    // Check completion only if positive contribution? Or always check target?
                     const isCompleted = newAmount >= goal.targetAmount;
 
                     await db.savingsGoals.update(goal.id!, {
@@ -181,9 +185,14 @@ export function useTransactionOperations() {
             if (original.savingsGoalId) {
                 const goal = await db.savingsGoals.get(original.savingsGoalId);
                 if (goal) {
-                    const originalContrib = original.type === 'expense'
-                        ? original.amount
-                        : -original.amount;
+                    let originalContrib = 0;
+                    if (original.type === 'savings') {
+                        originalContrib = original.amount;
+                    } else if (original.type === 'expense') {
+                        originalContrib = -original.amount;
+                    } else if (original.type === 'income') {
+                        originalContrib = original.amount;
+                    }
 
                     // Reversing means subtracting the contribution
                     await db.savingsGoals.update(goal.id!, {
@@ -197,9 +206,14 @@ export function useTransactionOperations() {
             if (newTx.savingsGoalId) {
                 const goal = await db.savingsGoals.get(newTx.savingsGoalId);
                 if (goal) {
-                    const newContrib = newTx.type === 'expense'
-                        ? newTx.amount
-                        : -newTx.amount;
+                    let newContrib = 0;
+                    if (newTx.type === 'savings') {
+                        newContrib = newTx.amount;
+                    } else if (newTx.type === 'expense') {
+                        newContrib = -newTx.amount;
+                    } else if (newTx.type === 'income') {
+                        newContrib = newTx.amount;
+                    }
 
                     const newAmount = goal.currentAmount + newContrib;
                     const isCompleted = newAmount >= goal.targetAmount;
@@ -224,9 +238,14 @@ export function useTransactionOperations() {
             if (original?.savingsGoalId) {
                 const goal = await db.savingsGoals.get(original.savingsGoalId);
                 if (goal) {
-                    const contribution = original.type === 'expense'
-                        ? original.amount
-                        : -original.amount;
+                    let contribution = 0;
+                    if (original.type === 'savings') {
+                        contribution = original.amount;
+                    } else if (original.type === 'expense') {
+                        contribution = -original.amount;
+                    } else if (original.type === 'income') {
+                        contribution = original.amount;
+                    }
 
                     // Revert contribution
                     await db.savingsGoals.update(goal.id!, {

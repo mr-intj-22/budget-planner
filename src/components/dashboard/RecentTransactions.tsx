@@ -67,6 +67,12 @@ export function RecentTransactions() {
             <div className="divide-y divide-slate-100 dark:divide-slate-700">
                 {transactions.map((transaction) => {
                     const category = categoryMap.get(transaction.categoryId);
+                    const isIncome = transaction.type === 'income';
+                    const isSavings = transaction.type === 'savings';
+
+                    // For savings: positive amount is deposit (out of wallet), negative is withdrawal (into wallet)
+                    const isPositiveSign = isIncome || (isSavings && transaction.amount < 0);
+
                     return (
                         <div
                             key={transaction.id}
@@ -74,11 +80,23 @@ export function RecentTransactions() {
                         >
                             <div
                                 className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: `${category?.color ?? '#6b7280'}20` }}
+                                style={{
+                                    backgroundColor: isIncome
+                                        ? '#10b98120'
+                                        : isSavings
+                                            ? '#3b82f620'
+                                            : `${category?.color ?? '#6b7280'}20`
+                                }}
                             >
                                 <div
                                     className="w-3 h-3 rounded-full"
-                                    style={{ backgroundColor: category?.color ?? '#6b7280' }}
+                                    style={{
+                                        backgroundColor: isIncome
+                                            ? '#10b981'
+                                            : isSavings
+                                                ? '#3b82f6'
+                                                : category?.color ?? '#6b7280'
+                                    }}
                                 />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -86,18 +104,28 @@ export function RecentTransactions() {
                                     {transaction.description || 'No description'}
                                 </p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                    {category && <CategoryBadge category={category} showIcon={false} />}
+                                    {isIncome ? (
+                                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                                            Income
+                                        </span>
+                                    ) : isSavings ? (
+                                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                                            Savings
+                                        </span>
+                                    ) : (
+                                        category && <CategoryBadge category={category} showIcon={false} />
+                                    )}
                                     <span className="text-xs text-slate-400">
                                         {formatDate(new Date(transaction.date))}
                                     </span>
                                 </div>
                             </div>
-                            <p className={`text-sm font-semibold ${transaction.type === 'income'
-                                    ? 'text-emerald-600 dark:text-emerald-400'
-                                    : 'text-red-600 dark:text-red-400'
+                            <p className={`text-sm font-semibold ${isPositiveSign
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-red-600 dark:text-red-400'
                                 }`}>
-                                {transaction.type === 'income' ? '+' : '-'}
-                                {formatCurrency(transaction.amount, settings)}
+                                {isPositiveSign ? '+' : '-'}
+                                {formatCurrency(Math.abs(transaction.amount), settings)}
                             </p>
                         </div>
                     );

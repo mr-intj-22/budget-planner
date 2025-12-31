@@ -1,4 +1,3 @@
-import React from 'react';
 import {
     LineChart,
     Line,
@@ -11,7 +10,6 @@ import {
 } from 'recharts';
 import { Card, CardHeader } from '../ui/Card';
 import { useMonthlyTransactions } from '../../hooks/useTransactions';
-import { useCategories } from '../../hooks/useCategories';
 import { useSettings } from '../../hooks/useSettings';
 import { formatCurrency } from '../../utils/currency';
 import { getMonthRange } from '../../utils/dateUtils';
@@ -19,47 +17,31 @@ import { useDateStore } from '../../stores/dateStore';
 
 export function SpendingLineChart() {
     const { transactions, isLoading } = useMonthlyTransactions();
-    const { categories } = useCategories();
     const { selectedYear, selectedMonth } = useDateStore();
     const { settings } = useSettings();
 
-    const dailyData: { day: string; expenses: number; income: number; cumulativeExpenses: number; cumulativeIncome: number; netBalance: number }[] = [];
-
-    // Create set of excluded category IDs
-    const excludedCategoryIds = new Set(
-        categories.filter(c => c.excludeFromTotals).map(c => c.id)
-    );
+    const dailyData: { day: string; expenses: number; income: number; cumulativeExpenses: number; cumulativeIncome: number; netBalance: number; currentBalance: number }[] = [];
 
     let currentExpenses = 0;
     let currentIncome = 0;
+    let currentSavings = 0;
 
-    // We can't easily get the startDay here without async or passing it down.
-    // However, the transactions come pre-sorted by date from the hook?
-    // Actually, hook returns desc sort.
-    // The previous loop logic generated empty days too.
-    // Ideally we'd get the range from settings again or trust the transactions?
-    // But we need to fill gaps (days with 0 spending).
-    // Let's rely on the transactions to find the range or assume standard if not provided?
-    // No, for the Chart to look right, we need the start date.
-    // We can fetch settings or assume default. But since useMonthlyTransactions fetches the right data...
-    // Let's use the range of the fetched transactions? No, data might be empty at start/end.
-
-    // Quick fix: Fetch settings via hook or passed prop?
-    // Let's use the explicit settings hook for consistency
+    // Fetch settings for financial month start
     const firstDayOfMonth = settings?.firstDayOfMonth ?? 1;
     const { start, end } = getMonthRange(selectedYear, selectedMonth, firstDayOfMonth);
 
     // Iterate day by day from start to end
     const currentDate = new Date(start);
     while (currentDate <= end) {
-        const dateStr = currentDate.toDateString(); // For comparison
-        const dayLabel = currentDate.getDate().toString(); // Or "Jan 25"
+        const dateStr = currentDate.toDateString();
+        const dayLabel = currentDate.getDate().toString();
 
         const dayTransactions = transactions.filter((t) => {
             const tDate = new Date(t.date);
-            return tDate.toDateString() === dateStr && !excludedCategoryIds.has(t.categoryId);
+            return tDate.toDateString() === dateStr;
         });
 
+        // Split by Type
         const dayExpenses = dayTransactions
             .filter((t) => t.type === 'expense')
             .reduce((sum, t) => sum + t.amount, 0);
@@ -68,17 +50,25 @@ export function SpendingLineChart() {
             .filter((t) => t.type === 'income')
             .reduce((sum, t) => sum + t.amount, 0);
 
+        const daySavings = dayTransactions
+            .filter((t) => t.type === 'savings')
+            .reduce((sum, t) => sum + t.amount, 0);
+
         currentExpenses += dayExpenses;
         currentIncome += dayIncome;
+        currentSavings += daySavings;
+
         const netBalance = currentIncome - currentExpenses;
+        const currentBalance = currentIncome - currentExpenses - currentSavings;
 
         dailyData.push({
-            day: dayLabel, // Just the day number for compactness, or adjust format
+            day: dayLabel,
             expenses: dayExpenses,
             income: dayIncome,
             cumulativeExpenses: currentExpenses,
             cumulativeIncome: currentIncome,
             netBalance,
+            currentBalance,
         });
 
         // Next day
@@ -114,7 +104,7 @@ export function SpendingLineChart() {
 
     return (
         <Card>
-            <CardHeader title="Cash Flow & Spending" subtitle="Cumulative income, expenses, and net balance" />
+            <CardHeader title="Cash Flow & Spending" subtitle="Cumulative income, expenses, and balances" />
             <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={dailyData}>
@@ -134,6 +124,15 @@ export function SpendingLineChart() {
                         <Legend />
                         <Line
                             type="monotone"
+                            dataKey="cumulativeIncome"
+                            name="Income"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 6 }}
+                        />
+                        <Line
+                            type="monotone"
                             dataKey="cumulativeExpenses"
                             name="Expenses"
                             stroke="#ef4444"
@@ -146,6 +145,15 @@ export function SpendingLineChart() {
                             dataKey="netBalance"
                             name="Net Balance"
                             stroke="#3b82f6"
+                            strokeWidth={2}
+                            dot={false}
+                            activeDot={{ r: 6 }}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="currentBalance"
+                            name="Current Balance"
+                            stroke="#6366f1"
                             strokeWidth={2}
                             dot={false}
                             activeDot={{ r: 6 }}

@@ -104,15 +104,7 @@ export const defaultCategories: Category[] = [
         createdAt: new Date(),
         updatedAt: new Date(),
     },
-    {
-        name: 'Savings',
-        color: '#10b981',
-        icon: 'piggy-bank',
-        monthlyBudget: 500,
-        isDefault: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-    },
+
     {
         name: 'Debt Payback',
         color: '#be123c',
@@ -195,7 +187,7 @@ export const availableCurrencies = [
  */
 export const availableIcons = [
     'home', 'car', 'shopping-cart', 'zap', 'wifi', 'tv', 'plane',
-    'gamepad-2', 'heart-pulse', 'shield', 'user', 'piggy-bank',
+    'gamepad-2', 'heart-pulse', 'shield', 'user',
     'more-horizontal', 'wallet', 'credit-card', 'gift', 'coffee',
     'utensils', 'book', 'music', 'film', 'camera', 'smartphone',
     'laptop', 'watch', 'glasses', 'shirt', 'scissors', 'wrench',

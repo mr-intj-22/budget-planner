@@ -5,10 +5,11 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { Toggle } from '../ui/Input';
 import { useAppStore } from '../../stores/appStore';
+import { useDateStore } from '../../stores/dateStore';
 import { useCategories } from '../../hooks/useCategories';
 import { useTransaction, useTransactionOperations } from '../../hooks/useTransactions';
 import type { TransactionFormData, PaymentMethod, RecurringType } from '../../db/schema';
-import { formatDateForInput } from '../../utils/dateUtils';
+import { formatDateForInput, parseDateInput } from '../../utils/dateUtils';
 
 const paymentMethods: { value: PaymentMethod; label: string }[] = [
     { value: 'cash', label: 'Cash' },
@@ -37,6 +38,7 @@ const initialFormData: TransactionFormData = {
 
 export function TransactionModal() {
     const { isTransactionModalOpen, editingTransactionId, closeTransactionModal, showToast } = useAppStore();
+    const { setSelectedDate } = useDateStore();
     const { categories } = useCategories();
     const { transaction: editingTransaction } = useTransaction(editingTransactionId);
     const { addTransaction, updateTransaction } = useTransactionOperations();
@@ -65,7 +67,7 @@ export function TransactionModal() {
                     recurringType: editingTransaction.recurringType,
                 });
             } else {
-                // Set default category
+                // Set default for new transaction
                 const defaultCategory = categories.find(c => c.name === 'Miscellaneous');
                 setFormData({
                     ...initialFormData,
@@ -106,13 +108,14 @@ export function TransactionModal() {
         setIsSubmitting(true);
 
         try {
-            // For income, use a default "Income" category ID (we'll use 0 as placeholder)
-            // and default payment method
+            // Ensure date is parsed correctly in local time
+            const txDate = parseDateInput(formData.date);
+
             const transactionData = {
                 amount: parseFloat(formData.amount),
                 type: formData.type,
                 categoryId: isIncome ? 0 : formData.categoryId,
-                date: new Date(formData.date),
+                date: txDate,
                 description: formData.description,
                 paymentMethod: isIncome ? 'bank_transfer' as PaymentMethod : formData.paymentMethod,
                 cardName: isCardPayment && !isIncome ? formData.cardName : undefined,
@@ -125,6 +128,14 @@ export function TransactionModal() {
                 showToast('Transaction updated successfully', 'success');
             } else {
                 await addTransaction(transactionData);
+
+                // Automatically switch view to the month of the added transaction
+                // This ensures the user sees the transaction even if they were viewing a different month
+                setSelectedDate(
+                    transactionData.date.getFullYear(),
+                    transactionData.date.getMonth()
+                );
+
                 showToast('Transaction added successfully', 'success');
             }
 

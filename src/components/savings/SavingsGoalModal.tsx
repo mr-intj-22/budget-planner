@@ -7,7 +7,7 @@ import { useAppStore } from '../../stores/appStore';
 import { useSavingsGoal, useSavingsGoalOperations } from '../../hooks/useSavingsGoals';
 import { categoryColors, availableIcons } from '../../db/seeds';
 import type { SavingsGoalFormData } from '../../db/schema';
-import { formatDateForInput } from '../../utils/dateUtils';
+import { formatDateForInput, parseDateInput } from '../../utils/dateUtils';
 
 const initialFormData: SavingsGoalFormData = {
     name: '',
@@ -86,7 +86,7 @@ export function SavingsGoalModal() {
                 name: formData.name.trim(),
                 targetAmount: parseFloat(formData.targetAmount),
                 currentAmount: parseFloat(formData.currentAmount) || 0,
-                targetDate: new Date(formData.targetDate),
+                targetDate: parseDateInput(formData.targetDate),
                 monthlyContribution: parseFloat(formData.monthlyContribution) || 0,
                 color: formData.color,
                 icon: formData.icon,

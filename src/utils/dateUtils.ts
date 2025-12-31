@@ -16,8 +16,14 @@ export function formatDate(date: Date): string {
 /**
  * Formats a date as ISO string for form inputs (YYYY-MM-DD)
  */
+/**
+ * Formats a date as ISO string for form inputs (YYYY-MM-DD)
+ * Uses local time instead of UTC to avoid date shifting
+ */
 export function formatDateForInput(date: Date): string {
-    return date.toISOString().split('T')[0] ?? '';
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0] ?? '';
 }
 
 /**

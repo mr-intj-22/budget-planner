@@ -8,8 +8,12 @@ import type {
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
 
+// @ts-ignore
+import { getMonthRange, getYearRange } from '../utils/dateUtils';
+
 /**
  * BudgetPlannerDB - Main database class using Dexie.js
+
  * 
  * This database stores all budget planner data locally in IndexedDB.
  * It supports versioned schema migrations and automatic seeding of default data.
@@ -153,15 +157,24 @@ export class BudgetPlannerDB extends Dexie {
     }
 
     /**
+     * Helper to get start day setting
+     */
+    private async getStartDay(): Promise<number> {
+        const settings = await this.appSettings.toCollection().first();
+        return settings?.firstDayOfMonth ?? 1;
+    }
+
+    /**
      * Gets transactions for a specific month
      */
     async getTransactionsForMonth(year: number, month: number): Promise<Transaction[]> {
-        const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month + 1, 0, 23, 59, 59);
+        const startDay = await this.getStartDay();
+        // Use updated date util which now accepts startDay
+        const { start, end } = getMonthRange(year, month, startDay);
 
         return this.transactions
             .where('date')
-            .between(startDate, endDate, true, true)
+            .between(start, end, true, true)
             .toArray();
     }
 
@@ -169,12 +182,13 @@ export class BudgetPlannerDB extends Dexie {
      * Gets transactions for a specific year
      */
     async getTransactionsForYear(year: number): Promise<Transaction[]> {
-        const startDate = new Date(year, 0, 1);
-        const endDate = new Date(year, 11, 31, 23, 59, 59);
+        const startDay = await this.getStartDay();
+        // Use updated date util which now accepts startDay
+        const { start, end } = getYearRange(year, startDay);
 
         return this.transactions
             .where('date')
-            .between(startDate, endDate, true, true)
+            .between(start, end, true, true)
             .toArray();
     }
 

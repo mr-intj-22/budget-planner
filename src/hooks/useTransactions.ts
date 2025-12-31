@@ -1,11 +1,9 @@
-/**
- * React hooks for transaction data access
- */
-
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
 import type { Transaction } from '../db/schema';
 import { useDateStore } from '../stores/dateStore';
+// @ts-ignore
+import { getMonthRange } from '../utils/dateUtils';
 
 /**
  * Hook to get transactions for the selected month
@@ -15,8 +13,9 @@ export function useMonthlyTransactions() {
 
     const transactions = useLiveQuery(
         async () => {
-            const start = new Date(selectedYear, selectedMonth, 1);
-            const end = new Date(selectedYear, selectedMonth + 1, 0, 23, 59, 59);
+            const settings = await db.appSettings.toCollection().first();
+            const startDay = settings?.firstDayOfMonth ?? 1;
+            const { start, end } = getMonthRange(selectedYear, selectedMonth, startDay);
 
             return db.transactions
                 .where('date')

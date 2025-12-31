@@ -37,20 +37,23 @@ export function parseDateInput(value: string): Date {
 }
 
 /**
- * Gets the start and end of a month
+ * Gets the start and end of a month, respecting the financial start day
+ * If startDay > 1, the month starts on that day and ends on the day before in the next month
  */
-export function getMonthRange(year: number, month: number): { start: Date; end: Date } {
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+export function getMonthRange(year: number, month: number, startDay: number = 1): { start: Date; end: Date } {
+    const start = new Date(year, month, startDay);
+    // End date is startDay - 1 of the NEXT month.
+    // e.g., if start is Jan 25, end is Feb 24 (25-1)
+    const end = new Date(year, month + 1, startDay - 1, 23, 59, 59, 999);
     return { start, end };
 }
 
 /**
- * Gets the start and end of a year
+ * Gets the start and end of a year, respecting the financial start day
  */
-export function getYearRange(year: number): { start: Date; end: Date } {
-    const start = new Date(year, 0, 1);
-    const end = new Date(year, 11, 31, 23, 59, 59, 999);
+export function getYearRange(year: number, startDay: number = 1): { start: Date; end: Date } {
+    const start = new Date(year, 0, startDay);
+    const end = new Date(year + 1, 0, startDay - 1, 23, 59, 59, 999);
     return { start, end };
 }
 

@@ -52,13 +52,15 @@ export function CategoryCard({ category, showBudgetProgress = true }: CategoryCa
                     onClick={handleEdit}
                     aria-label={`Edit ${category.name}`}
                 />
-                <IconButton
-                    icon={Trash2}
-                    size="sm"
-                    onClick={handleDelete}
-                    aria-label={`Delete ${category.name}`}
-                    className="hover:text-red-500"
-                />
+                {!category.isSystemLocked && (
+                    <IconButton
+                        icon={Trash2}
+                        size="sm"
+                        onClick={handleDelete}
+                        aria-label={`Delete ${category.name}`}
+                        className="hover:text-red-500"
+                    />
+                )}
             </div>
 
             <div className="flex items-start gap-4">

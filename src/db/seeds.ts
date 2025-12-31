@@ -114,6 +114,17 @@ export const defaultCategories: Category[] = [
         updatedAt: new Date(),
     },
     {
+        name: 'Debt Payback',
+        color: '#be123c',
+        icon: 'credit-card',
+        monthlyBudget: 0,
+        isDefault: true,
+        isSystemLocked: true,
+        excludeFromTotals: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+    },
+    {
         name: 'Miscellaneous',
         color: '#6b7280',
         icon: 'more-horizontal',

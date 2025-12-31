@@ -36,6 +36,36 @@ export class BudgetPlannerDB extends Dexie {
             appSettings: '++id',
         });
 
+        // Schema version 2 - Add indexes and seed new category
+        this.version(2).stores({
+            categories: '++id, name, isDefault', // Boolean indexing not supported, so remove excludeFromTotals
+            // Other tables remain same, but must be restated or Dexie deletes them? 
+            // Dexie inheritance: versions inherit from previous if not specified? 
+            // No, Dexie requires all tables to be present in latest version if changed? 
+            // Actually, usually you just define differences or strictly defined all. 
+            // Safest to redefine all for clarity.
+            transactions: '++id, categoryId, date, type, [date+type]',
+            monthlyBudgets: '++id, categoryId, year, month, [categoryId+year+month], [year+month]',
+            savingsGoals: '++id, name, targetDate, isCompleted',
+            appSettings: '++id',
+        }).upgrade(async tx => {
+            // Add Debt Payback category if it doesn't exist
+            const existing = await tx.table('categories').where('name').equals('Debt Payback').first();
+            if (!existing) {
+                await tx.table('categories').add({
+                    name: 'Debt Payback',
+                    color: '#be123c',
+                    icon: 'credit-card',
+                    monthlyBudget: 0,
+                    isDefault: true,
+                    isSystemLocked: true,
+                    excludeFromTotals: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            }
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();

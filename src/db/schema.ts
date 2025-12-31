@@ -12,7 +12,9 @@ export interface Category {
     color: string;           // Hex color code (e.g., '#6366f1')
     icon: string;            // Lucide icon name (e.g., 'home', 'car')
     monthlyBudget: number;   // Default monthly budget limit
-    isDefault: boolean;      // System categories can't be deleted
+    isDefault: boolean;      // Default categories (semantics only, handled by isSystemLocked now)
+    isSystemLocked?: boolean; // Cannot be deleted
+    excludeFromTotals?: boolean; // Excluded from budget/spending totals
     createdAt: Date;
     updatedAt: Date;
 }

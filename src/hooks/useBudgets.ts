@@ -26,27 +26,29 @@ export function useMonthlyBudgetSummary() {
     );
 
     // Compute summaries for each category
-    const summaries: MonthlyBudgetSummary[] = categories.map((category) => {
-        const budget = budgets?.find((b) => b.categoryId === category.id);
-        const spent = spending.get(category.id ?? 0) ?? 0;
-        const planned = budget?.plannedAmount ?? category.monthlyBudget;
-        const rollover = budget?.rolloverAmount ?? 0;
-        const totalBudget = planned + rollover;
-        const remaining = totalBudget - spent;
-        const percentUsed = totalBudget > 0 ? (spent / totalBudget) * 100 : 0;
+    const summaries: MonthlyBudgetSummary[] = categories
+        .filter(c => !c.excludeFromTotals)
+        .map((category) => {
+            const budget = budgets?.find((b) => b.categoryId === category.id);
+            const spent = spending.get(category.id ?? 0) ?? 0;
+            const planned = budget?.plannedAmount ?? category.monthlyBudget;
+            const rollover = budget?.rolloverAmount ?? 0;
+            const totalBudget = planned + rollover;
+            const remaining = totalBudget - spent;
+            const percentUsed = totalBudget > 0 ? (spent / totalBudget) * 100 : 0;
 
-        return {
-            categoryId: category.id ?? 0,
-            categoryName: category.name,
-            categoryColor: category.color,
-            categoryIcon: category.icon,
-            planned,
-            spent,
-            remaining,
-            percentUsed: Math.min(100, Math.max(0, percentUsed)),
-            rollover,
-        };
-    });
+            return {
+                categoryId: category.id ?? 0,
+                categoryName: category.name,
+                categoryColor: category.color,
+                categoryIcon: category.icon,
+                planned,
+                spent,
+                remaining,
+                percentUsed: Math.min(100, Math.max(0, percentUsed)),
+                rollover,
+            };
+        });
 
     // Calculate totals
     const totalPlanned = summaries.reduce((sum, s) => sum + s.planned, 0);

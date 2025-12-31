@@ -67,11 +67,11 @@ export function useCategoryOperations() {
             throw new Error(`Cannot delete category with ${transactionCount} transactions`);
         }
 
-        // Default categories check removed
-        // const category = await db.categories.get(id);
-        // if (category?.isDefault) {
-        //     throw new Error('Cannot delete default categories');
-        // }
+        // Check if it's a system locked category
+        const category = await db.categories.get(id);
+        if (category?.isSystemLocked) {
+            throw new Error('Cannot delete system-locked categories');
+        }
 
         return db.categories.delete(id);
     };

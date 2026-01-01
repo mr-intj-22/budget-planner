@@ -296,6 +296,13 @@ export class BudgetPlannerDB extends Dexie {
             healthScores: '++id, [year+month]'
         });
 
+        // Schema version 14 - Add dashboardLayout to AppSettings
+        this.version(14).stores({}).upgrade(async tx => {
+            await tx.table('appSettings').toCollection().modify({
+                dashboardLayout: ['spending-chart', 'expense-pie', 'budget-list', 'recent-transactions', 'health-score']
+            });
+        });
+
         // Hook to seed default data on database creation
         this.on('populate', async () => {
             await this.seedDefaultData();

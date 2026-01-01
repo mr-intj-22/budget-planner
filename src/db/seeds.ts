@@ -144,6 +144,7 @@ export const defaultSettings: AppSettings = {
     autoBackupEnabled: false,
     autoBackupPath: '',
     lastAutoBackup: undefined,
+    dashboardLayout: ['spending-chart', 'expense-pie', 'budget-list', 'recent-transactions', 'health-score'],
     createdAt: new Date(),
     updatedAt: new Date(),
 };

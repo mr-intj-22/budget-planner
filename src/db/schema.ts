@@ -126,6 +126,7 @@ export interface AppSettings {
     autoBackupEnabled: boolean;   // Enable backup on start
     autoBackupPath?: string;      // User-friendly path label
     lastAutoBackup?: string;      // ISO date of last auto-backup
+    dashboardLayout?: string[];   // IDs of widgets in order
     createdAt: Date;
     updatedAt: Date;
 }

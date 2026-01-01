@@ -7,7 +7,9 @@ import {
     Download,
     Trash2,
     AlertTriangle,
+    FolderOpen,
 } from 'lucide-react';
+import { db } from '../db/database';
 import { Card, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
@@ -93,6 +95,30 @@ export function Settings() {
 
     const handleResetData = () => {
         openDeleteConfirmation('all-data', null, 'all data');
+    };
+
+    const handleSelectFolder = async () => {
+        try {
+            if ('showDirectoryPicker' in window) {
+                const handle = await (window as any).showDirectoryPicker({
+                    mode: 'readwrite'
+                });
+
+                // Store handle in extraState
+                await db.extraState.put({ key: 'backupFolderHandle', value: handle });
+
+                // Update setting path for display
+                updateSettings({ autoBackupPath: handle.name });
+                showToast(`Backup folder set to: ${handle.name}`, 'success');
+            } else {
+                showToast('Your browser does not support folder selection. Auto-backup will use standard downloads.', 'info');
+            }
+        } catch (error: any) {
+            if (error.name !== 'AbortError') {
+                console.error('Folder selection failed:', error);
+                showToast('Failed to select folder', 'error');
+            }
+        }
     };
 
     const currencyOptions = availableCurrencies.map(c => ({
@@ -260,6 +286,45 @@ export function Settings() {
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                         Backups include all transactions, categories, budgets, goals, and settings.
                     </p>
+
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-medium text-slate-900 dark:text-white">Automatic Backups</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Perform a backup every time the app starts</p>
+                            </div>
+                            <Toggle
+                                checked={settings?.autoBackupEnabled ?? false}
+                                onChange={(checked) => updateSettings({ autoBackupEnabled: checked })}
+                            />
+                        </div>
+
+                        {settings?.autoBackupEnabled && (
+                            <div className="flex flex-col gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <FolderOpen className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Backup Folder</p>
+                                            <p className="text-sm text-slate-900 dark:text-white truncate">
+                                                {settings.autoBackupPath || 'No folder selected (Will fallback to Downloads)'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        onClick={handleSelectFolder}
+                                    >
+                                        Change
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    Note: Browsers usually require permission to access folders each session.
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </Card>
 

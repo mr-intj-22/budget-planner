@@ -141,6 +141,9 @@ export const defaultSettings: AppSettings = {
     highContrastMode: false,
     largeTextMode: false,
     hideFinancialValues: false,
+    autoBackupEnabled: false,
+    autoBackupPath: '',
+    lastAutoBackup: undefined,
     createdAt: new Date(),
     updatedAt: new Date(),
 };

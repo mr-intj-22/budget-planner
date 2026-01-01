@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Toast } from '../ui/EmptyState';
+import { triggerAutoBackup } from '../../utils/exportImport';
 import { useAppStore } from '../../stores/appStore';
 import { useSettings } from '../../hooks/useSettings';
 import { TransactionModal } from '../transactions/TransactionModal';
@@ -13,6 +14,11 @@ import { DeleteConfirmDialog } from '../common/DeleteConfirmDialog';
 export function Layout() {
     const { sidebarCollapsed, toast, hideToast, theme } = useAppStore();
     const { settings } = useSettings();
+
+    // Trigger auto-backup on app start
+    useEffect(() => {
+        triggerAutoBackup();
+    }, []);
 
     // Apply theme on mount and changes
     useEffect(() => {

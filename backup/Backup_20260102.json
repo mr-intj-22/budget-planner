@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "exportedAt": "2026-01-01T15:50:03.773Z",
+  "categories": [
+    {
+      "name": "Rent / Mortgage",
+      "color": "#8b5cf6",
+      "icon": "home",
+      "monthlyBudget": 61000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:22:32.179Z",
+      "id": 1
+    },
+    {
+      "name": "Car",
+      "color": "#06b6d4",
+      "icon": "car",
+      "monthlyBudget": 20000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:21:28.808Z",
+      "id": 2
+    },
+    {
+      "name": "Groceries",
+      "color": "#22c55e",
+      "icon": "shopping-cart",
+      "monthlyBudget": 80000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:22:12.493Z",
+      "id": 3
+    },
+    {
+      "name": "Utilities",
+      "color": "#eab308",
+      "icon": "zap",
+      "monthlyBudget": 15000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:23:31.092Z",
+      "id": 4
+    },
+    {
+      "name": "Subscriptions",
+      "color": "#ec4899",
+      "icon": "tv",
+      "monthlyBudget": 640,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:55:40.848Z",
+      "id": 6
+    },
+    {
+      "name": "Entertainment",
+      "color": "#a855f7",
+      "icon": "gamepad-2",
+      "monthlyBudget": 10000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:22:08.179Z",
+      "id": 8
+    },
+    {
+      "name": "Personal",
+      "color": "#f43f5e",
+      "icon": "user",
+      "monthlyBudget": 5000,
+      "isDefault": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:22:20.026Z",
+      "id": 11
+    },
+    {
+      "name": "Debt Payback",
+      "color": "#be123c",
+      "icon": "credit-card",
+      "monthlyBudget": 0,
+      "isDefault": true,
+      "isSystemLocked": true,
+      "excludeFromTotals": true,
+      "createdAt": "2025-12-31T10:04:53.027Z",
+      "updatedAt": "2025-12-31T10:04:53.027Z",
+      "id": 13
+    },
+    {
+      "name": "Baby",
+      "color": "#6366f1",
+      "icon": "baby",
+      "monthlyBudget": 40000,
+      "isDefault": false,
+      "createdAt": "2025-12-31T10:22:48.590Z",
+      "updatedAt": "2025-12-31T10:22:48.590Z",
+      "id": 16
+    },
+    {
+      "name": "Misc",
+      "color": "#f97316",
+      "icon": "shield",
+      "monthlyBudget": 0,
+      "isDefault": false,
+      "createdAt": "2025-12-31T10:49:51.169Z",
+      "updatedAt": "2025-12-31T12:21:12.611Z",
+      "id": 17
+    }
+  ],
+  "transactions": [],
+  "monthlyBudgets": [
+    {
+      "categoryId": 4,
+      "year": 2026,
+      "month": 0,
+      "plannedAmount": 15000,
+      "rolloverEnabled": false,
+      "rolloverAmount": 0,
+      "createdAt": "2025-12-31T10:36:17.097Z",
+      "updatedAt": "2025-12-31T10:36:17.097Z",
+      "id": 1
+    }
+  ],
+  "savingsGoals": [
+    {
+      "name": "Savings",
+      "targetAmount": 720000,
+      "currentAmount": 0,
+      "targetDate": "2026-12-30T15:00:00.000Z",
+      "monthlyContribution": 60000,
+      "color": "#10b981",
+      "icon": "piggy-bank",
+      "isCompleted": false,
+      "createdAt": "2025-12-31T10:06:40.420Z",
+      "updatedAt": "2025-12-31T10:06:40.420Z",
+      "id": 1
+    }
+  ],
+  "debts": [
+    {
+      "name": "Mom",
+      "description": "",
+      "originalAmount": 1710,
+      "originalCurrency": "EUR",
+      "dueDate": "2026-06-10T00:00:00.000Z",
+      "isPaid": false,
+      "createdAt": "2025-12-31T11:03:41.411Z",
+      "updatedAt": "2025-12-31T11:03:41.411Z",
+      "id": 2,
+      "paidAmount": 0
+    },
+    {
+      "name": "Duc",
+      "description": "",
+      "originalAmount": 170000,
+      "originalCurrency": "JPY",
+      "dueDate": "2026-03-10T00:00:00.000Z",
+      "isPaid": false,
+      "createdAt": "2025-12-31T11:04:02.169Z",
+      "updatedAt": "2025-12-31T11:33:46.790Z",
+      "id": 3,
+      "paidAmount": 0
+    },
+    {
+      "name": "PDAS",
+      "description": "",
+      "originalAmount": 180000,
+      "originalCurrency": "JPY",
+      "dueDate": "2026-02-10T00:00:00.000Z",
+      "isPaid": false,
+      "createdAt": "2025-12-31T11:07:24.883Z",
+      "updatedAt": "2025-12-31T11:21:58.758Z",
+      "id": 4,
+      "paidAmount": 0
+    },
+    {
+      "name": "Hasan",
+      "description": "",
+      "originalAmount": 1000,
+      "originalCurrency": "EUR",
+      "dueDate": "2026-02-10T00:00:00.000Z",
+      "isPaid": false,
+      "createdAt": "2025-12-31T11:10:48.645Z",
+      "updatedAt": "2025-12-31T11:10:48.645Z",
+      "id": 5
+    }
+  ],
+  "settings": {
+    "currency": "JPY",
+    "currencySymbol": "¥",
+    "currencyLocale": "ja-JP",
+    "firstDayOfMonth": 10,
+    "theme": "dark",
+    "highContrastMode": false,
+    "largeTextMode": false,
+    "createdAt": "2025-12-31T10:04:53.027Z",
+    "updatedAt": "2026-01-01T15:49:44.165Z",
+    "id": 1,
+    "hideFinancialValues": false,
+    "autoBackupEnabled": true,
+    "autoBackupPath": "backup"
+  }
+}

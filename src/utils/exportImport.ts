@@ -206,3 +206,73 @@ export async function downloadCSV(year?: number, month?: number): Promise<void> 
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+/**
+ * Generates a backup filename in the format Backup_YYYYMMDD.json
+ */
+export function generateBackupFilename(): string {
+    const now = new Date();
+    const YYYY = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const DD = String(now.getDate()).padStart(2, '0');
+    return `Backup_${YYYY}${MM}${DD}.json`;
+}
+
+/**
+ * Triggers an automatic backup if enabled and not already done today
+ */
+export async function triggerAutoBackup(): Promise<void> {
+    const settings = await db.appSettings.toCollection().first();
+    if (!settings || !settings.autoBackupEnabled) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    if (settings.lastAutoBackup === today) return;
+
+    try {
+        const data = await exportBackup();
+        const filename = generateBackupFilename();
+
+        // Try to use File System Access API if a handle is saved
+        const folderExtra = await db.extraState.get('backupFolderHandle');
+        if (folderExtra && folderExtra.value) {
+            const handle = folderExtra.value as FileSystemDirectoryHandle;
+
+            // Re-verify permission (browsers usually reset this on reload)
+            const permission = await (handle as any).queryPermission({ mode: 'readwrite' });
+
+            if (permission === 'granted') {
+                const fileHandle = await handle.getFileHandle(filename, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(data);
+                await writable.close();
+
+                // Update last backup date
+                await db.appSettings.update(settings.id!, {
+                    lastAutoBackup: today,
+                    updatedAt: new Date()
+                });
+                console.log(`Auto-backup saved to folder: ${filename}`);
+                return;
+            }
+        }
+
+        // Fallback: Standard browser download (silent as possible)
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Update last backup date
+        await db.appSettings.update(settings.id!, {
+            lastAutoBackup: today,
+            updatedAt: new Date()
+        });
+        console.log(`Auto-backup triggered via download: ${filename}`);
+    } catch (error) {
+        console.error('Auto-backup failed:', error);
+    }
+}

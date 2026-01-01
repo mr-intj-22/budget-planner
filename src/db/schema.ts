@@ -108,8 +108,19 @@ export interface AppSettings {
     highContrastMode: boolean;
     largeTextMode: boolean;
     hideFinancialValues: boolean; // Privacy mode: hide absolute numbers
+    autoBackupEnabled: boolean;   // Enable backup on start
+    autoBackupPath?: string;      // User-friendly path label
+    lastAutoBackup?: string;      // ISO date of last auto-backup
     createdAt: Date;
     updatedAt: Date;
+}
+
+// ============================================
+// Extra State - Non-serializable state (not for export)
+// ============================================
+export interface ExtraState {
+    key: string;
+    value: any;
 }
 
 // ============================================

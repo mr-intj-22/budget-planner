@@ -6,6 +6,7 @@ import type {
     SavingsGoal,
     Debt,
     AppSettings,
+    ExtraState,
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
 
@@ -27,6 +28,7 @@ export class BudgetPlannerDB extends Dexie {
     savingsGoals!: Table<SavingsGoal, number>;
     debts!: Table<Debt, number>;
     appSettings!: Table<AppSettings, number>;
+    extraState!: Table<ExtraState, string>;
 
     constructor() {
         super('BudgetPlannerDB');
@@ -270,6 +272,20 @@ export class BudgetPlannerDB extends Dexie {
                 if (debt.paidAmount === undefined) {
                     debt.paidAmount = 0;
                 }
+            });
+        });
+
+        // Schema version 11 - Add ExtraState table
+        this.version(11).stores({
+            extraState: '&key'
+        });
+
+        // Schema version 12 - Add autoBackup settings to AppSettings
+        this.version(12).stores({}).upgrade(async tx => {
+            await tx.table('appSettings').toCollection().modify({
+                autoBackupEnabled: false,
+                autoBackupPath: '',
+                lastAutoBackup: undefined
             });
         });
 

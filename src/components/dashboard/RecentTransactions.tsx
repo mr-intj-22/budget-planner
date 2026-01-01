@@ -8,8 +8,12 @@ import { useSettings } from '../../hooks/useSettings';
 import { formatCurrency } from '../../utils/currency';
 import { formatDate } from '../../utils/dateUtils';
 
-export function RecentTransactions() {
-    const { transactions, isLoading } = useRecentTransactions(5);
+interface RecentTransactionsProps {
+    limit?: number;
+}
+
+export function RecentTransactions({ limit = 5 }: RecentTransactionsProps) {
+    const { transactions, isLoading } = useRecentTransactions(limit);
     const { categories } = useCategories();
     const { settings } = useSettings();
 

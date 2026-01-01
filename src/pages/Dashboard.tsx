@@ -4,6 +4,7 @@ import { ExpensePieChart } from '../components/dashboard/ExpensePieChart';
 import { SpendingLineChart } from '../components/dashboard/SpendingLineChart';
 import { BudgetProgressList } from '../components/dashboard/BudgetProgressList';
 import { RecentTransactions } from '../components/dashboard/RecentTransactions';
+import { HealthScoreDial } from '../components/dashboard/HealthScoreDial';
 
 export function Dashboard() {
     const { getMonthYearString } = useDateStore();
@@ -23,17 +24,20 @@ export function Dashboard() {
             {/* Summary Cards */}
             <SummaryCards />
 
-            {/* Charts Row */}
+            {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ExpensePieChart />
                 <SpendingLineChart />
+                <ExpensePieChart />
             </div>
 
-            {/* Bottom Row */}
+            {/* Secondary Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <BudgetProgressList />
-                <RecentTransactions />
+                <RecentTransactions limit={5} />
             </div>
+
+            {/* Full-width Health Score at the bottom */}
+            <HealthScoreDial />
         </div>
     );
 }

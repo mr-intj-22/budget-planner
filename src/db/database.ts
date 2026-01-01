@@ -7,6 +7,7 @@ import type {
     Debt,
     AppSettings,
     ExtraState,
+    MonthlyHealthScore,
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
 
@@ -29,6 +30,7 @@ export class BudgetPlannerDB extends Dexie {
     debts!: Table<Debt, number>;
     appSettings!: Table<AppSettings, number>;
     extraState!: Table<ExtraState, string>;
+    healthScores!: Table<MonthlyHealthScore, number>;
 
     constructor() {
         super('BudgetPlannerDB');
@@ -287,6 +289,11 @@ export class BudgetPlannerDB extends Dexie {
                 autoBackupPath: '',
                 lastAutoBackup: undefined
             });
+        });
+
+        // Schema version 13 - Add healthScores table
+        this.version(13).stores({
+            healthScores: '++id, [year+month]'
         });
 
         // Hook to seed default data on database creation

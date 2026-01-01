@@ -19,6 +19,21 @@ export interface Category {
     updatedAt: Date;
 }
 
+export interface MonthlyHealthScore {
+    id?: number;
+    year: number;
+    month: number;
+    totalScore: number;
+    componentScores: {
+        savingsRate: number;
+        budgetAdherence: number;
+        debtProgress: number;
+        spendingStability: number;
+        emergencyFund: number;
+    };
+    createdAt: Date;
+}
+
 // ============================================
 // Transaction - Income or expense entries
 // ============================================

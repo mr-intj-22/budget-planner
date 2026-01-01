@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
-import { Select, ColorPicker } from '../ui/Select';
+import { ColorPicker, IconPicker } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { useAppStore } from '../../stores/appStore';
 import { useCategory, useCategoryOperations } from '../../hooks/useCategories';
@@ -90,10 +90,7 @@ export function CategoryModal() {
         }
     };
 
-    const iconOptions = availableIcons.map((icon) => ({
-        value: icon,
-        label: icon.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-    }));
+
 
     return (
         <Modal
@@ -133,12 +130,13 @@ export function CategoryModal() {
                     onChange={(color) => setFormData({ ...formData, color })}
                 />
 
-                {/* Icon Selector */}
-                <Select
+                {/* Icon Picker */}
+                <IconPicker
                     label="Icon"
-                    options={iconOptions}
+                    icons={availableIcons}
                     value={formData.icon}
-                    onChange={(value) => setFormData({ ...formData, icon: value })}
+                    onChange={(icon) => setFormData({ ...formData, icon })}
+                    color={formData.color}
                 />
 
                 {/* Monthly Budget */}

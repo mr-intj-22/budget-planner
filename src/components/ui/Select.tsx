@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Icons from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 
 interface SelectOption {
@@ -95,6 +96,59 @@ export function ColorPicker({ value, onChange, colors, label }: ColorPickerProps
                         aria-label={`Select color ${color}`}
                     />
                 ))}
+            </div>
+        </div>
+    );
+}
+
+// Icon Picker
+interface IconPickerProps {
+    value: string;
+    onChange: (icon: string) => void;
+    icons: string[];
+    label?: string;
+    color?: string;
+}
+
+export function IconPicker({ value, onChange, icons, label, color = '#6366f1' }: IconPickerProps) {
+    return (
+        <div>
+            {label && <p className="label">{label}</p>}
+            <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 max-h-48 overflow-y-auto p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
+                {icons.map((iconName) => {
+                    // Convert kebab-case to PascalCase for Lucide icons
+                    const pascalName = iconName
+                        .split('-')
+                        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                        .join('') as keyof typeof Icons;
+
+                    const IconComponent = Icons[pascalName] as React.ElementType;
+
+                    return (
+                        <button
+                            key={iconName}
+                            type="button"
+                            onClick={() => onChange(iconName)}
+                            className={`
+                                aspect-square rounded-lg flex items-center justify-center transition-all duration-200
+                                ${value === iconName
+                                    ? 'bg-white dark:bg-slate-800 shadow-md ring-2 ring-slate-900 dark:ring-white scale-110 z-10'
+                                    : 'hover:bg-white/80 dark:hover:bg-slate-800/80 hover:scale-105 opacity-60 hover:opacity-100'
+                                }
+                            `}
+                            aria-label={`Select icon ${iconName}`}
+                        >
+                            {IconComponent ? (
+                                <IconComponent
+                                    className="w-5 h-5"
+                                    style={{ color: value === iconName ? color : 'currentColor' }}
+                                />
+                            ) : (
+                                <span className="text-[10px]">{iconName}</span>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

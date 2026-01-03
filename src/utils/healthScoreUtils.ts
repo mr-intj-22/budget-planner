@@ -12,16 +12,19 @@ export interface MonthlyHealthScoreResult {
         savingsRate: HealthScoreComponentResult;
         budgetAdherence: HealthScoreComponentResult;
         debtProgress: HealthScoreComponentResult;
-        spendingStability: HealthScoreComponentResult;
         emergencyFund: HealthScoreComponentResult;
     };
 }
 
 /**
  * Calculates the Savings Rate component (30% weight)
- * Target: 20% of income = 100 points
+ * Target: 20% of income = 100 points. If a savings goal is reached, return 100.
  */
-export function calculateSavingsRate(income: number, savings: number): HealthScoreComponentResult {
+export function calculateSavingsRate(income: number, savings: number, goalReached = false): HealthScoreComponentResult {
+    if (goalReached) {
+        return { score: 100, value: 100, label: 'Savings Rate', description: 'Savings goal reached.' };
+    }
+
     const rate = income > 0 ? (savings / income) : 0;
     // 0.20 (20%) -> 100 points. Score = rate / 0.20 * 100
     const score = Math.min(100, Math.max(0, rate * 500));
@@ -42,28 +45,47 @@ export function calculateBudgetAdherence(planned: number, spent: number): Health
     if (planned === 0) return { score: 100, value: 0, label: 'Budget Adherence', description: 'No budgets set for this month.' };
 
     const overspend = Math.max(0, spent - planned);
-    const adherence = Math.max(0, 100 - (overspend / planned * 100));
+    const overspendRatio = overspend / planned; // e.g., 0.1 means 10% overspend
+
+    if (overspendRatio <= 0) {
+        return {
+            score: 100,
+            value: (spent / planned) * 100,
+            label: 'Budget Adherence',
+            description: 'You stayed within your planned budget.'
+        };
+    }
+
+    // If overspendRatio >= 0.10 (10%), score == 0. Linearly interpolate between 0..0.10
+    if (overspendRatio >= 0.10) {
+        return {
+            score: 0,
+            value: (spent / planned) * 100,
+            label: 'Budget Adherence',
+            description: `You exceeded your budget by ${(overspendRatio * 100).toFixed(1)}%`,
+        };
+    }
+
+    const score = Math.round(100 * (1 - (overspendRatio / 0.10)));
 
     return {
-        score: adherence,
+        score,
         value: (spent / planned) * 100,
         label: 'Budget Adherence',
-        description: spent > planned
-            ? `You spent ${(spent - planned).toFixed(2)} over your planned budget.`
-            : 'You stayed within your planned budget.'
+        description: `You exceeded your budget by ${(overspend).toFixed(2)}.`
     };
 }
 
 /**
  * Calculates the Debt Progress component (20% weight)
- * Target: 2% reduction of total debt per month = 100 points
+ * Target: 20% reduction of total debt per month = 100 points
  */
 export function calculateDebtProgress(totalDebt: number, totalPaid: number): HealthScoreComponentResult {
     if (totalDebt === 0) return { score: 100, value: 0, label: 'Debt Progress', description: 'You have no outstanding debt!' };
 
     const reductionRate = totalPaid / totalDebt;
-    // 0.02 (2%) -> 100 points. Score = rate / 0.02 * 100
-    const score = Math.min(100, Math.max(0, reductionRate * 5000));
+    // 0.20 (20%) -> 100 points. Score = rate / 0.20 * 100
+    const score = Math.min(100, Math.max(0, reductionRate * 500));
 
     return {
         score,
@@ -73,34 +95,7 @@ export function calculateDebtProgress(totalDebt: number, totalPaid: number): Hea
     };
 }
 
-/**
- * Calculates the Spending Stability component (15% weight)
- * Based on the variance of daily spending.
- */
-export function calculateSpendingStability(dailySpending: number[]): HealthScoreComponentResult {
-    if (dailySpending.length < 2) return { score: 100, value: 0, label: 'Spending Stability', description: 'Not enough data to calculate stability.' };
-
-    const n = dailySpending.length;
-    const mean = dailySpending.reduce((a, b) => a + b, 0) / n;
-
-    if (mean === 0) return { score: 100, value: 0, label: 'Spending Stability', description: 'No spending recorded.' };
-
-    const variance = dailySpending.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
-    const stdDev = Math.sqrt(variance);
-
-    // Coefficient of variation (CV) = stdDev / mean
-    // Lower CV is better. If CV = 0 (perfect stability), score = 100.
-    // If CV = 1.0 (stdDev = mean), score = 0.
-    const cv = stdDev / mean;
-    const score = Math.max(0, 100 - (cv * 100));
-
-    return {
-        score,
-        value: cv,
-        label: 'Spending Stability',
-        description: score > 80 ? 'Your spending is very consistent.' : 'Your spending has high daily variance.'
-    };
-}
+// Spending Stability removed per new rules.
 
 /**
  * Calculates the Emergency Fund component (10% weight)
@@ -131,22 +126,26 @@ export function calculateTotalHealthScore(
     spentBudget: number,
     totalDebt: number,
     totalDebtPaid: number,
-    dailySpending: number[],
     currentBalance: number,
-    avgMonthlyExpenses: number
+    avgMonthlyExpenses: number,
+    goalReached: boolean = false
 ): MonthlyHealthScoreResult {
-    const savingsRate = calculateSavingsRate(income, savings);
+    const savingsRate = calculateSavingsRate(income, savings, goalReached);
     const budgetAdherence = calculateBudgetAdherence(plannedBudget, spentBudget);
     const debtProgress = calculateDebtProgress(totalDebt, totalDebtPaid);
-    const spendingStability = calculateSpendingStability(dailySpending);
     const emergencyFund = calculateEmergencyFund(currentBalance, avgMonthlyExpenses);
+
+    // If user has no savings recorded, emergency fund should be treated as 0
+    if (savings === 0) {
+        emergencyFund.score = 0;
+        emergencyFund.description = 'No savings available for emergency fund.';
+    }
 
     const totalScore = Math.round(
         (savingsRate.score * 0.30) +
-        (budgetAdherence.score * 0.25) +
-        (debtProgress.score * 0.20) +
-        (spendingStability.score * 0.15) +
-        (emergencyFund.score * 0.10)
+        (budgetAdherence.score * 0.40) +
+        (debtProgress.score * 0.15) +
+        (emergencyFund.score * 0.15)
     );
 
     return {
@@ -155,7 +154,6 @@ export function calculateTotalHealthScore(
             savingsRate,
             budgetAdherence,
             debtProgress,
-            spendingStability,
             emergencyFund
         }
     };

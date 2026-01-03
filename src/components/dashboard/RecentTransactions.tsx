@@ -23,9 +23,9 @@ export function RecentTransactions({ limit = 5 }: RecentTransactionsProps) {
         return (
             <Card>
                 <CardHeader title="Recent Transactions" />
-                <div className="space-y-3">
+                <div className="space-y-3 h-64 overflow-y-auto">
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="animate-pulse flex items-center gap-3">
+                        <div key={i} className="animate-pulse flex items-center gap-3 px-6">
                             <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-xl" />
                             <div className="flex-1">
                                 <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2 mb-1" />
@@ -43,9 +43,11 @@ export function RecentTransactions({ limit = 5 }: RecentTransactionsProps) {
         return (
             <Card>
                 <CardHeader title="Recent Transactions" />
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                    <Receipt className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p>No transactions yet</p>
+                <div className="h-64 flex items-center justify-center text-center text-slate-400 dark:text-slate-500">
+                    <div>
+                        <Receipt className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p>No transactions yet</p>
+                    </div>
                 </div>
             </Card>
         );
@@ -67,7 +69,7 @@ export function RecentTransactions({ limit = 5 }: RecentTransactionsProps) {
                     }
                 />
             </div>
-            <div className="divide-y divide-slate-100 dark:divide-slate-700">
+            <div className="divide-y divide-slate-100 dark:divide-slate-700 h-64 overflow-y-auto">
                 {transactions.map((transaction) => {
                     const category = categoryMap.get(transaction.categoryId);
                     const isIncome = transaction.type === 'income';

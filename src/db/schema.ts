@@ -28,7 +28,6 @@ export interface MonthlyHealthScore {
         savingsRate: number;
         budgetAdherence: number;
         debtProgress: number;
-        spendingStability: number;
         emergencyFund: number;
     };
     createdAt: Date;

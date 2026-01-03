@@ -44,7 +44,7 @@ export function useHealthScore() {
                 }
             }
 
-            const dailySpending = Array.from(dailySpendingMap.values());
+            // daily spending array removed (spending stability no longer used)
 
             // 2. Get budgeted vs spent
             const budgets = await db.monthlyBudgets
@@ -100,6 +100,12 @@ export function useHealthScore() {
                 ? totalHistExpenses / monthsWithExpenses.size
                 : expenses; // Fallback to current month if no history
 
+            // 4b. Get savings goals summary to determine if any goal is reached
+            const savingsGoals = await db.savingsGoals.toArray();
+            const totalTarget = savingsGoals.reduce((acc, g) => acc + (g.targetAmount ?? 0), 0);
+            const totalSaved = savingsGoals.reduce((acc, g) => acc + (g.currentAmount ?? 0), 0);
+            const anyGoalCompleted = savingsGoals.some(g => g.isCompleted) || (totalTarget > 0 && totalSaved >= totalTarget);
+
             // 5. Calculate final score
             const scoreResult = calculateTotalHealthScore(
                 income,
@@ -108,9 +114,9 @@ export function useHealthScore() {
                 spentBudget,
                 totalDebt,
                 totalDebtPaid,
-                dailySpending,
                 currentBalance,
-                avgMonthlyExpenses
+                avgMonthlyExpenses,
+                anyGoalCompleted
             );
 
             // 6. Removed side-effect database write from useLiveQuery which caused recursion/crashes
@@ -163,7 +169,6 @@ export function useHealthScore() {
                         savingsRate: score.components.savingsRate.score,
                         budgetAdherence: score.components.budgetAdherence.score,
                         debtProgress: score.components.debtProgress.score,
-                        spendingStability: score.components.spendingStability.score,
                         emergencyFund: score.components.emergencyFund.score,
                     },
                     createdAt: new Date()

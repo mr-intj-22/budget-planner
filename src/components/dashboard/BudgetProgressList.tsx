@@ -19,7 +19,7 @@ export function BudgetProgressList() {
         return (
             <Card>
                 <CardHeader title="Budget Progress" />
-                <div className="space-y-4">
+                <div className="space-y-4 h-64 overflow-y-auto">
                     {[1, 2, 3, 4].map((i) => (
                         <div key={i} className="animate-pulse">
                             <div className="flex justify-between mb-2">
@@ -38,9 +38,11 @@ export function BudgetProgressList() {
         return (
             <Card>
                 <CardHeader title="Budget Progress" />
-                <div className="py-8 text-center text-slate-400 dark:text-slate-500">
-                    <p>No budgets set for this month</p>
-                    <p className="text-sm mt-1">Go to Monthly Budget to set up your budgets</p>
+                <div className="h-64 flex items-center justify-center text-center text-slate-400 dark:text-slate-500">
+                    <div>
+                        <p>No budgets set for this month</p>
+                        <p className="text-sm mt-1">Go to Monthly Budget to set up your budgets</p>
+                    </div>
                 </div>
             </Card>
         );
@@ -49,7 +51,7 @@ export function BudgetProgressList() {
     return (
         <Card>
             <CardHeader title="Budget Progress" subtitle="Category spending vs budget" />
-            <div className="space-y-4 max-h-80 overflow-y-auto">
+            <div className="space-y-4 h-64 overflow-y-auto">
                 {budgetedCategories.map((summary) => {
                     // Get icon component
                     const iconName = summary.categoryIcon

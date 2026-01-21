@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/currency';
 import { useSettings } from '../../hooks/useSettings';
 import { useAppStore } from '../../stores/appStore';
 import { useTransactionOperations } from '../../hooks/useTransactions';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 
 interface TransactionRowProps {
     transaction: Transaction;
@@ -17,6 +18,7 @@ export function TransactionRow({ transaction, category }: TransactionRowProps) {
     const { settings } = useSettings();
     const { openTransactionModal, openDeleteConfirmation, showToast } = useAppStore();
     const { duplicateTransaction } = useTransactionOperations();
+    const { paymentMethods } = usePaymentMethods();
 
     const handleDuplicate = async () => {
         try {
@@ -111,7 +113,7 @@ export function TransactionRow({ transaction, category }: TransactionRowProps) {
                     {isIncome ? 'Income' :
                         isSavings ? (transaction.amount > 0 ? 'Savings Deposit' : 'Savings Withdrawal') :
                             transaction.cardName ? transaction.cardName :
-                                transaction.paymentMethod.replace('_', ' ')}
+                                paymentMethods.find((m: any) => m.id === transaction.paymentMethodId)?.name ?? 'None'}
                 </p>
             </div>
 

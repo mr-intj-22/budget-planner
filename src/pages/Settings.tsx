@@ -8,6 +8,8 @@ import {
     Trash2,
     AlertTriangle,
     FolderOpen,
+    CreditCard,
+    Plus,
 } from 'lucide-react';
 import { db } from '../db/database';
 import { Card, CardHeader } from '../components/ui/Card';
@@ -16,7 +18,9 @@ import { Select } from '../components/ui/Select';
 import { Toggle } from '../components/ui/Input';
 import { useSettings } from '../hooks/useSettings';
 import { useAppStore } from '../stores/appStore';
+import { usePaymentMethods, usePaymentMethodOperations } from '../hooks/usePaymentMethods';
 import { availableCurrencies } from '../db/seeds';
+import { Input } from '../components/ui/Input';
 import { downloadBackup, importBackup } from '../utils/exportImport';
 
 export function Settings() {
@@ -25,6 +29,9 @@ export function Settings() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [newPaymentMethodName, setNewPaymentMethodName] = useState('');
+    const { paymentMethods, isLoading: isLoadingMethods } = usePaymentMethods();
+    const { addPaymentMethod, deletePaymentMethod } = usePaymentMethodOperations();
 
     const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
         setTheme(newTheme);
@@ -118,6 +125,28 @@ export function Settings() {
                 console.error('Folder selection failed:', error);
                 showToast('Failed to select folder', 'error');
             }
+        }
+    };
+
+    const handleAddPaymentMethod = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newPaymentMethodName.trim()) return;
+
+        try {
+            await addPaymentMethod(newPaymentMethodName.trim());
+            setNewPaymentMethodName('');
+            showToast('Payment method added', 'success');
+        } catch (error) {
+            showToast('Failed to add payment method', 'error');
+        }
+    };
+
+    const handleDeletePaymentMethod = async (id: number) => {
+        try {
+            await deletePaymentMethod(id);
+            showToast('Payment method deleted', 'success');
+        } catch (error: any) {
+            showToast(error.message || 'Failed to delete payment method', 'error');
         }
     };
 
@@ -246,6 +275,65 @@ export function Settings() {
                         onChange={(value) => updateSettings({ firstDayOfMonth: parseInt(value) })}
                         helperText="Some people prefer their budget month to start on payday"
                     />
+                </div>
+            </Card>
+
+            {/* Payment Methods */}
+            <Card>
+                <CardHeader
+                    title="Payment Methods"
+                    subtitle="Manage your payment methods (e.g., Credit Card, Bank Account)"
+                />
+
+                <div className="space-y-6">
+                    <form onSubmit={handleAddPaymentMethod} className="flex gap-2">
+                        <Input
+                            placeholder="Add new payment method..."
+                            value={newPaymentMethodName}
+                            onChange={(e) => setNewPaymentMethodName(e.target.value)}
+                            className="flex-1"
+                        />
+                        <Button type="submit" icon={Plus} disabled={!newPaymentMethodName.trim()}>
+                            Add
+                        </Button>
+                    </form>
+
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800">
+                        {isLoadingMethods ? (
+                            <div className="py-4 text-center text-slate-500 animate-pulse">Loading...</div>
+                        ) : paymentMethods.length === 0 ? (
+                            <div className="py-4 text-center text-slate-500">No payment methods added.</div>
+                        ) : (
+                            paymentMethods.map((method) => (
+                                <div key={method.id} className="py-3 flex items-center justify-between group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                            <CreditCard className="w-4 h-4 text-slate-500" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-slate-900 dark:text-white">
+                                                {method.name}
+                                                {method.isDefault && (
+                                                    <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-700 text-slate-500">
+                                                        Default
+                                                    </span>
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {!method.isDefault && (
+                                        <button
+                                            onClick={() => handleDeletePaymentMethod(method.id!)}
+                                            className="p-2 text-slate-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                            title="Delete payment method"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
                 </div>
             </Card>
 

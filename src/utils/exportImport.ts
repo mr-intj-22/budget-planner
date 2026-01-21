@@ -11,9 +11,10 @@ const BACKUP_VERSION = 1;
  * Exports all data to a JSON backup file
  */
 export async function exportBackup(): Promise<string> {
-    const [categories, transactions, monthlyBudgets, savingsGoals, debts, settings] = await Promise.all([
+    const [categories, transactions, paymentMethods, monthlyBudgets, savingsGoals, debts, settings] = await Promise.all([
         db.categories.toArray(),
         db.transactions.toArray(),
+        db.paymentMethods.toArray(),
         db.monthlyBudgets.toArray(),
         db.savingsGoals.toArray(),
         db.debts.toArray(),
@@ -25,6 +26,7 @@ export async function exportBackup(): Promise<string> {
         exportedAt: new Date().toISOString(),
         categories,
         transactions,
+        paymentMethods,
         monthlyBudgets,
         savingsGoals,
         debts,
@@ -71,11 +73,12 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
 
         // Import data in a transaction
         await db.transaction('rw',
-            [db.categories, db.transactions, db.monthlyBudgets, db.savingsGoals, db.debts, db.appSettings],
+            [db.categories, db.transactions, db.paymentMethods, db.monthlyBudgets, db.savingsGoals, db.debts, db.appSettings],
             async () => {
                 // Clear existing data
                 await db.categories.clear();
                 await db.transactions.clear();
+                await db.paymentMethods.clear();
                 await db.monthlyBudgets.clear();
                 await db.savingsGoals.clear();
                 await db.debts.clear();
@@ -97,6 +100,16 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
                     updatedAt: new Date(t.updatedAt),
                 }));
                 await db.transactions.bulkAdd(transactions);
+
+                // Import payment methods
+                if (backup.paymentMethods?.length) {
+                    const methods = backup.paymentMethods.map(m => ({
+                        ...m,
+                        createdAt: new Date(m.createdAt),
+                        updatedAt: new Date(m.updatedAt),
+                    }));
+                    await db.paymentMethods.bulkAdd(methods);
+                }
 
                 // Import monthly budgets
                 if (backup.monthlyBudgets?.length) {
@@ -154,7 +167,9 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
 export async function exportToCSV(year?: number, month?: number): Promise<string> {
     let transactions = await db.transactions.toArray();
     const categories = await db.categories.toArray();
+    const paymentMethods = await db.paymentMethods.toArray();
     const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+    const methodMap = new Map(paymentMethods.map(m => [m.id, m.name]));
 
     // Filter by date if specified
     if (year !== undefined && month !== undefined) {
@@ -178,7 +193,7 @@ export async function exportToCSV(year?: number, month?: number): Promise<string
         categoryMap.get(t.categoryId) ?? 'Unknown',
         t.amount.toFixed(2),
         `"${t.description.replace(/"/g, '""')}"`,
-        t.paymentMethod,
+        methodMap.get(t.paymentMethodId) ?? 'None',
     ]);
 
     return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');

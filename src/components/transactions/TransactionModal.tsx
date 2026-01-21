@@ -8,17 +8,10 @@ import { useAppStore } from '../../stores/appStore';
 import { useDateStore } from '../../stores/dateStore';
 import { useCategories } from '../../hooks/useCategories';
 import { useTransaction, useTransactionOperations } from '../../hooks/useTransactions';
-import type { TransactionFormData, PaymentMethod, RecurringType } from '../../db/schema';
+import type { TransactionFormData, RecurringType } from '../../db/schema';
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
+import { usePaymentMethods } from '../../hooks/usePaymentMethods';
 import { formatDateForInput, parseDateInput } from '../../utils/dateUtils';
-
-const paymentMethods: { value: PaymentMethod; label: string }[] = [
-    { value: 'cash', label: 'Cash' },
-    { value: 'debit', label: 'Debit Card' },
-    { value: 'credit', label: 'Credit Card' },
-    { value: 'bank_transfer', label: 'Bank Transfer' },
-    { value: 'other', label: 'Other' },
-];
 
 const recurringTypes: { value: RecurringType; label: string }[] = [
     { value: 'weekly', label: 'Weekly' },
@@ -32,7 +25,7 @@ const initialFormData: TransactionFormData = {
     categoryId: 0,
     date: formatDateForInput(new Date()),
     description: '',
-    paymentMethod: 'debit',
+    paymentMethodId: 0,
     cardName: '',
     isRecurring: false,
     savingsGoalId: undefined,
@@ -43,6 +36,7 @@ export function TransactionModal() {
     const { setSelectedDate } = useDateStore();
     const { categories } = useCategories();
     const { goals } = useSavingsGoals();
+    const { paymentMethods } = usePaymentMethods();
     const { transaction: editingTransaction } = useTransaction(editingTransactionId);
     const { addTransaction, updateTransaction } = useTransactionOperations();
 
@@ -53,7 +47,8 @@ export function TransactionModal() {
     const [isWithdrawal, setIsWithdrawal] = useState(false);
 
     // Check if payment method requires card name
-    const isCardPayment = formData.paymentMethod === 'credit' || formData.paymentMethod === 'debit';
+    const selectedMethod = paymentMethods.find((m: any) => m.id === formData.paymentMethodId);
+    const isCardPayment = selectedMethod?.name.toLowerCase().includes('card');
     const isIncome = formData.type === 'income';
     const isSavings = formData.type === 'savings';
 
@@ -97,7 +92,7 @@ export function TransactionModal() {
                     categoryId: editingTransaction.categoryId ?? 0,
                     date: formatDateForInput(new Date(editingTransaction.date)),
                     description: editingTransaction.description,
-                    paymentMethod: editingTransaction.paymentMethod,
+                    paymentMethodId: editingTransaction.paymentMethodId ?? 0,
                     cardName: editingTransaction.cardName ?? '',
                     isRecurring: editingTransaction.isRecurring,
                     recurringType: editingTransaction.recurringType,
@@ -114,6 +109,7 @@ export function TransactionModal() {
                 setFormData({
                     ...initialFormData,
                     categoryId: defaultCategory?.id ?? categories[0]?.id ?? 0,
+                    paymentMethodId: paymentMethods.find(m => m.isDefault)?.id ?? paymentMethods[0]?.id ?? 0,
                     date: formatDateForInput(new Date()),
                     ...transactionModalInitialData
                 });
@@ -139,6 +135,10 @@ export function TransactionModal() {
         // Category required only if NOT Income and NOT Savings
         if (!isIncome && !isSavings && !formData.categoryId) {
             newErrors.categoryId = 'Please select a category';
+        }
+
+        if (!isIncome && !isSavings && !formData.paymentMethodId) {
+            newErrors.paymentMethodId = 'Please select a payment method';
         }
 
         // Savings Goal required for savings transactions
@@ -178,7 +178,7 @@ export function TransactionModal() {
                 categoryId: (isIncome || isSavings) ? undefined : formData.categoryId,
                 date: txDate,
                 description: formData.description,
-                paymentMethod: isIncome ? 'bank_transfer' as PaymentMethod : formData.paymentMethod,
+                paymentMethodId: isIncome ? undefined : formData.paymentMethodId,
                 cardName: isCardPayment && !isIncome && !isSavings ? formData.cardName : undefined,
                 isRecurring: formData.isRecurring,
                 recurringType: formData.isRecurring ? formData.recurringType : undefined,
@@ -370,9 +370,10 @@ export function TransactionModal() {
                 {!isIncome && !isSavings && (
                     <Select
                         label="Payment Method"
-                        options={paymentMethods}
-                        value={formData.paymentMethod}
-                        onChange={(value) => setFormData({ ...formData, paymentMethod: value as PaymentMethod })}
+                        options={paymentMethods.map(m => ({ value: m.id!.toString(), label: m.name }))}
+                        value={formData.paymentMethodId.toString()}
+                        onChange={(value) => setFormData({ ...formData, paymentMethodId: parseInt(value) })}
+                        error={errors.paymentMethodId}
                     />
                 )}
 

@@ -8,6 +8,7 @@ import type {
     AppSettings,
     ExtraState,
     MonthlyHealthScore,
+    PaymentMethodEntry,
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
 
@@ -31,6 +32,7 @@ export class BudgetPlannerDB extends Dexie {
     appSettings!: Table<AppSettings, number>;
     extraState!: Table<ExtraState, string>;
     healthScores!: Table<MonthlyHealthScore, number>;
+    paymentMethods!: Table<PaymentMethodEntry, number>;
 
     constructor() {
         super('BudgetPlannerDB');
@@ -303,7 +305,47 @@ export class BudgetPlannerDB extends Dexie {
             });
         });
 
-        // Hook to seed default data on database creation
+        // Schema version 15 - Add paymentMethods table and migrate transactions
+        this.version(15).stores({
+            paymentMethods: '++id, name, isDefault',
+            transactions: '++id, categoryId, date, type, savingsGoalId, paymentMethodId, [date+type]'
+        }).upgrade(async tx => {
+            // 1. Seed default 'Cash' payment method
+            const now = new Date();
+            const cashId = await tx.table('paymentMethods').add({
+                name: 'Cash',
+                isDefault: true,
+                createdAt: now,
+                updatedAt: now,
+            });
+
+            // 2. Create other previous default methods if they were used
+            // We'll map: cash -> cashId, others -> new entries
+            const otherMethods = ['debit', 'credit', 'bank_transfer', 'other'];
+            const methodMap = new Map<string, number>();
+            methodMap.set('cash', cashId as number);
+
+            for (const name of otherMethods) {
+                const id = await tx.table('paymentMethods').add({
+                    name: name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' '),
+                    isDefault: false,
+                    createdAt: now,
+                    updatedAt: now,
+                });
+                methodMap.set(name, id as number);
+            }
+
+            // 3. Migrate transactions
+            await tx.table('transactions').toCollection().modify(t => {
+                const oldMethod = (t as any).paymentMethod;
+                if (oldMethod && methodMap.has(oldMethod)) {
+                    t.paymentMethodId = methodMap.get(oldMethod);
+                } else {
+                    t.paymentMethodId = cashId;
+                }
+                delete (t as any).paymentMethod;
+            });
+        });
         this.on('populate', async () => {
             await this.seedDefaultData();
         });

@@ -102,7 +102,12 @@ export function useDebtOperations() {
             // 2. Find Debt Payback category
             const paybackCategory = await db.categories.where('name').equals('Debt Payback').first();
 
-            // 3. Create associated transaction
+            // 3. Find a payment method (default or first available)
+            const defaultMethod = await db.paymentMethods.where('isDefault').equals(1).first();
+            const firstMethod = await db.paymentMethods.toCollection().first();
+            const paymentMethodId = defaultMethod?.id ?? firstMethod?.id;
+
+            // 4. Create associated transaction
             const debt = await db.debts.get(id);
             await db.transactions.add({
                 amount: localAmount,
@@ -110,7 +115,7 @@ export function useDebtOperations() {
                 categoryId: paybackCategory?.id,
                 date: new Date(),
                 description: description || `Repayment: ${debt?.name || 'Debt'}`,
-                paymentMethod: 'bank_transfer',
+                paymentMethodId: paymentMethodId,
                 isRecurring: false,
                 debtId: id,
                 createdAt: new Date(),

@@ -38,7 +38,14 @@ export interface MonthlyHealthScore {
 // ============================================
 export type TransactionType = 'income' | 'expense' | 'savings';
 export type RecurringType = 'monthly' | 'yearly' | 'weekly' | 'custom';
-export type PaymentMethod = 'cash' | 'credit' | 'debit' | 'bank_transfer' | 'other';
+
+export interface PaymentMethodEntry {
+    id?: number;
+    name: string;
+    isDefault: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
 
 export interface Transaction {
     id?: number;
@@ -47,7 +54,7 @@ export interface Transaction {
     categoryId?: number; // Optional for savings
     date: Date;
     description: string;
-    paymentMethod: PaymentMethod;
+    paymentMethodId?: number; // Linked to PaymentMethod table
     cardName?: string;           // Name of the card used (for credit/debit)
     isRecurring: boolean;
     recurringType?: RecurringType;
@@ -186,7 +193,7 @@ export interface TransactionFormData {
     categoryId: number;
     date: string;  // ISO date string for form input
     description: string;
-    paymentMethod: PaymentMethod;
+    paymentMethodId: number;
     cardName: string;            // Name of the card used
     isRecurring: boolean;
     recurringType?: RecurringType;
@@ -218,6 +225,7 @@ export interface BackupData {
     exportedAt: string;
     categories: Category[];
     transactions: Transaction[];
+    paymentMethods: PaymentMethodEntry[];
     monthlyBudgets: MonthlyBudget[];
     savingsGoals: SavingsGoal[];
     debts: Debt[];

@@ -3,6 +3,9 @@ import { Button } from '../components/ui/Button';
 import { TransactionList } from '../components/transactions/TransactionList';
 import { useDateStore } from '../stores/dateStore';
 import { useAppStore } from '../stores/appStore';
+import { useState } from 'react';
+import { Select } from '../components/ui/Select';
+import { useCategories } from '../hooks/useCategories';
 import { useMonthlyTotals } from '../hooks/useTransactions';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/currency';
@@ -12,6 +15,8 @@ export function Transactions() {
     const { openTransactionModal } = useAppStore();
     const { income, expenses, net } = useMonthlyTotals();
     const { settings } = useSettings();
+    const { categories } = useCategories();
+    const [selectedCategoryId, setSelectedCategoryId] = useState<number | 'all'>('all');
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -25,9 +30,20 @@ export function Transactions() {
                         {getMonthYearString()}
                     </p>
                 </div>
-                <Button icon={Plus} onClick={() => openTransactionModal()}>
-                    Add Transaction
-                </Button>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <Select
+                        options={[
+                            { value: 'all', label: 'All Categories' },
+                            ...categories.map(c => ({ value: c.id!, label: c.name }))
+                        ]}
+                        value={selectedCategoryId === 'all' ? 'all' : selectedCategoryId.toString()}
+                        onChange={(val) => setSelectedCategoryId(val === 'all' ? 'all' : Number(val))}
+                        className="w-full sm:w-48"
+                    />
+                    <Button icon={Plus} onClick={() => openTransactionModal()}>
+                        Add Transaction
+                    </Button>
+                </div>
             </div>
 
             {/* Quick Stats */}
@@ -56,7 +72,7 @@ export function Transactions() {
             </div>
 
             {/* Transaction List */}
-            <TransactionList />
+            <TransactionList selectedCategoryId={selectedCategoryId === 'all' ? undefined : selectedCategoryId} />
         </div>
     );
 }

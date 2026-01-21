@@ -6,13 +6,17 @@ import { useMonthlyTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
 import { useAppStore } from '../../stores/appStore';
 
-export function TransactionList() {
+export function TransactionList({ selectedCategoryId }: { selectedCategoryId?: number }) {
     const { transactions, isLoading } = useMonthlyTransactions();
     const { categories } = useCategories();
     const { openTransactionModal } = useAppStore();
 
     // Create category map for quick lookup
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+    const filteredTransactions = selectedCategoryId
+        ? transactions.filter(t => t.categoryId === selectedCategoryId)
+        : transactions;
 
     if (isLoading) {
         return (
@@ -33,24 +37,26 @@ export function TransactionList() {
         );
     }
 
-    if (transactions.length === 0) {
+    if (filteredTransactions.length === 0) {
         return (
             <Card>
                 <EmptyState
                     icon={<Receipt className="w-8 h-8 text-slate-400" />}
-                    title="No transactions yet"
-                    description="Start tracking your income and expenses by adding your first transaction"
-                    action={{
+                    title={selectedCategoryId ? "No transactions found" : "No transactions yet"}
+                    description={selectedCategoryId
+                        ? "Try clearing your filters or selecting a different category"
+                        : "Start tracking your income and expenses by adding your first transaction"}
+                    action={!selectedCategoryId ? {
                         label: 'Add Transaction',
                         onClick: () => openTransactionModal(),
-                    }}
+                    } : undefined}
                 />
             </Card>
         );
     }
 
     // Group transactions by date
-    const groupedTransactions = transactions.reduce((groups, transaction) => {
+    const groupedTransactions = filteredTransactions.reduce((groups, transaction) => {
         const dateKey = new Date(transaction.date).toDateString();
         if (!groups.has(dateKey)) {
             groups.set(dateKey, []);

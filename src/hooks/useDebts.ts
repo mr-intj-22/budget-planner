@@ -92,7 +92,7 @@ export function useDebtOperations() {
             isPaid: newPaid >= totalAmount
         };
 
-        return db.transaction('rw', [db.debts, db.transactions, db.categories], async () => {
+        return db.transaction('rw', [db.debts, db.transactions, db.categories, db.paymentMethods], async () => {
             // 1. Update Debt status
             await db.debts.update(id, {
                 ...updates,

@@ -6,7 +6,7 @@ import { useMonthlyTransactions } from '../../hooks/useTransactions';
 import { useCategories } from '../../hooks/useCategories';
 import { useAppStore } from '../../stores/appStore';
 
-export function TransactionList({ selectedCategoryId }: { selectedCategoryId?: number }) {
+export function TransactionList({ selectedCategoryId, selectedPaymentFilter }: { selectedCategoryId?: number, selectedPaymentFilter?: string }) {
     const { transactions, isLoading } = useMonthlyTransactions();
     const { categories } = useCategories();
     const { openTransactionModal } = useAppStore();
@@ -14,9 +14,20 @@ export function TransactionList({ selectedCategoryId }: { selectedCategoryId?: n
     // Create category map for quick lookup
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
 
-    const filteredTransactions = selectedCategoryId
-        ? transactions.filter(t => t.categoryId === selectedCategoryId)
-        : transactions;
+    const filteredTransactions = transactions.filter(t => {
+        if (selectedCategoryId && t.categoryId !== selectedCategoryId) return false;
+
+        if (selectedPaymentFilter) {
+            if (selectedPaymentFilter.startsWith('cc-')) {
+                const ccId = parseInt(selectedPaymentFilter.replace('cc-', ''));
+                if (t.creditCardId !== ccId) return false;
+            } else if (selectedPaymentFilter.startsWith('pm-')) {
+                const pmId = parseInt(selectedPaymentFilter.replace('pm-', ''));
+                if (t.paymentMethodId !== pmId) return false;
+            }
+        }
+        return true;
+    });
 
     if (isLoading) {
         return (

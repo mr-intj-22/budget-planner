@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, ChevronDown } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { TransactionList } from '../components/transactions/TransactionList';
 import { useDateStore } from '../stores/dateStore';
@@ -9,6 +9,8 @@ import { useCategories } from '../hooks/useCategories';
 import { useMonthlyTotals } from '../hooks/useTransactions';
 import { useSettings } from '../hooks/useSettings';
 import { formatCurrency } from '../utils/currency';
+import { usePaymentMethods } from '../hooks/usePaymentMethods';
+import { useCreditCards } from '../hooks/useCreditCards';
 
 export function Transactions() {
     const { getMonthYearString } = useDateStore();
@@ -16,7 +18,10 @@ export function Transactions() {
     const { income, expenses, net } = useMonthlyTotals();
     const { settings } = useSettings();
     const { categories } = useCategories();
+    const { paymentMethods } = usePaymentMethods();
+    const { creditCards } = useCreditCards();
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | 'all'>('all');
+    const [selectedPaymentFilter, setSelectedPaymentFilter] = useState<string>('all');
 
     return (
         <div className="space-y-6 animate-fade-in">
@@ -40,6 +45,32 @@ export function Transactions() {
                         onChange={(val) => setSelectedCategoryId(val === 'all' ? 'all' : Number(val))}
                         className="w-full sm:w-48"
                     />
+
+                    <div className="relative w-full sm:w-48 hidden md:block">
+                        <select
+                            className="input appearance-none cursor-pointer pr-10 w-full"
+                            value={selectedPaymentFilter}
+                            onChange={(e) => setSelectedPaymentFilter(e.target.value)}
+                        >
+                            <option value="all">All Payment Methods</option>
+                            {creditCards.length > 0 && (
+                                <optgroup label="Credit Cards">
+                                    {creditCards.map(c => (
+                                        <option key={`cc-${c.id}`} value={`cc-${c.id}`}>{c.name}</option>
+                                    ))}
+                                </optgroup>
+                            )}
+                            {paymentMethods.length > 0 && (
+                                <optgroup label="Other Methods">
+                                    {paymentMethods.map(m => (
+                                        <option key={`pm-${m.id}`} value={`pm-${m.id}`}>{m.name}</option>
+                                    ))}
+                                </optgroup>
+                            )}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                    </div>
+
                     <Button icon={Plus} onClick={() => openTransactionModal()}>
                         Add Transaction
                     </Button>
@@ -72,7 +103,10 @@ export function Transactions() {
             </div>
 
             {/* Transaction List */}
-            <TransactionList selectedCategoryId={selectedCategoryId === 'all' ? undefined : selectedCategoryId} />
+            <TransactionList
+                selectedCategoryId={selectedCategoryId === 'all' ? undefined : selectedCategoryId}
+                selectedPaymentFilter={selectedPaymentFilter === 'all' ? undefined : selectedPaymentFilter}
+            />
         </div>
     );
 }

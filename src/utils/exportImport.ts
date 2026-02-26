@@ -11,10 +11,11 @@ const BACKUP_VERSION = 1;
  * Exports all data to a JSON backup file
  */
 export async function exportBackup(): Promise<string> {
-    const [categories, transactions, paymentMethods, monthlyBudgets, savingsGoals, debts, settings] = await Promise.all([
+    const [categories, transactions, paymentMethods, creditCards, monthlyBudgets, savingsGoals, debts, settings] = await Promise.all([
         db.categories.toArray(),
         db.transactions.toArray(),
         db.paymentMethods.toArray(),
+        db.creditCards.toArray(),
         db.monthlyBudgets.toArray(),
         db.savingsGoals.toArray(),
         db.debts.toArray(),
@@ -27,6 +28,7 @@ export async function exportBackup(): Promise<string> {
         categories,
         transactions,
         paymentMethods,
+        creditCards,
         monthlyBudgets,
         savingsGoals,
         debts,
@@ -73,12 +75,13 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
 
         // Import data in a transaction
         await db.transaction('rw',
-            [db.categories, db.transactions, db.paymentMethods, db.monthlyBudgets, db.savingsGoals, db.debts, db.appSettings],
+            [db.categories, db.transactions, db.paymentMethods, db.creditCards, db.monthlyBudgets, db.savingsGoals, db.debts, db.appSettings],
             async () => {
                 // Clear existing data
                 await db.categories.clear();
                 await db.transactions.clear();
                 await db.paymentMethods.clear();
+                await db.creditCards.clear();
                 await db.monthlyBudgets.clear();
                 await db.savingsGoals.clear();
                 await db.debts.clear();
@@ -109,6 +112,16 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
                         updatedAt: new Date(m.updatedAt),
                     }));
                     await db.paymentMethods.bulkAdd(methods);
+                }
+
+                // Import credit cards
+                if (backup.creditCards?.length) {
+                    const cards = backup.creditCards.map(c => ({
+                        ...c,
+                        createdAt: new Date(c.createdAt),
+                        updatedAt: new Date(c.updatedAt),
+                    }));
+                    await db.creditCards.bulkAdd(cards);
                 }
 
                 // Import monthly budgets

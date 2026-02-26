@@ -23,6 +23,7 @@ const navItems = [
     { path: '/categories', icon: FolderOpen, label: 'Categories' },
     { path: '/savings-goals', icon: PiggyBank, label: 'Savings Goals' },
     { path: '/debts', icon: CreditCard, label: 'Debt Tracker' },
+    { path: '/credit-cards', icon: CreditCard, label: 'Credit Cards' },
     { path: '/reports', icon: BarChart3, label: 'Reports' },
     { path: '/settings', icon: Settings, label: 'Settings' },
 ];

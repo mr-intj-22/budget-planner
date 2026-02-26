@@ -22,16 +22,19 @@ import { SpendingLineChart } from '../components/dashboard/SpendingLineChart';
 import { BudgetProgressList } from '../components/dashboard/BudgetProgressList';
 import { RecentTransactions } from '../components/dashboard/RecentTransactions';
 import { HealthScoreDial } from '../components/dashboard/HealthScoreDial';
+import { CreditCardWidget } from '../components/dashboard/CreditCardWidget';
 import { Button } from '../components/ui/Button';
 
-const DEFAULT_LAYOUT = ['spending-chart', 'expense-pie', 'budget-list', 'recent-transactions', 'health-score'];
+const DEFAULT_LAYOUT = ['spending-chart', 'expense-pie', 'budget-list', 'credit-cards', 'recent-transactions', 'health-score'];
 
 export function Dashboard() {
     const { getMonthYearString } = useDateStore();
     const { settings, updateSettings } = useSettings();
     const [isEditing, setIsEditing] = useState(false);
 
-    const layout = settings?.dashboardLayout || DEFAULT_LAYOUT;
+    const savedLayout = settings?.dashboardLayout || DEFAULT_LAYOUT;
+    // Auto-append credit-cards if missing from user's custom layout
+    const layout = savedLayout.includes('credit-cards') ? savedLayout : [...savedLayout, 'credit-cards'];
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -61,6 +64,7 @@ export function Dashboard() {
             case 'expense-pie': return <ExpensePieChart />;
             case 'budget-list': return <BudgetProgressList />;
             case 'recent-transactions': return <RecentTransactions limit={5} />;
+            case 'credit-cards': return <CreditCardWidget />;
             case 'health-score': return <HealthScoreDial />;
             default: return null;
         }

@@ -47,6 +47,20 @@ export interface PaymentMethodEntry {
     updatedAt: Date;
 }
 
+export interface CreditCard {
+    id?: number;
+    name: string;
+    network: string; // e.g., 'Visa', 'Mastercard', 'Amex'
+    limit: number;
+    statementDate: number; // 1-31
+    dueDate: number; // 1-31
+    color: string;
+    icon: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Transaction {
     id?: number;
     amount: number;
@@ -55,6 +69,7 @@ export interface Transaction {
     date: Date;
     description: string;
     paymentMethodId?: number; // Linked to PaymentMethod table
+    creditCardId?: number;    // Linked to CreditCard table
     cardName?: string;           // Name of the card used (for credit/debit)
     isRecurring: boolean;
     recurringType?: RecurringType;
@@ -194,6 +209,7 @@ export interface TransactionFormData {
     date: string;  // ISO date string for form input
     description: string;
     paymentMethodId: number;
+    creditCardId?: number;
     cardName: string;            // Name of the card used
     isRecurring: boolean;
     recurringType?: RecurringType;
@@ -226,6 +242,7 @@ export interface BackupData {
     categories: Category[];
     transactions: Transaction[];
     paymentMethods: PaymentMethodEntry[];
+    creditCards: CreditCard[];
     monthlyBudgets: MonthlyBudget[];
     savingsGoals: SavingsGoal[];
     debts: Debt[];

@@ -11,7 +11,9 @@ import { useTransaction, useTransactionOperations } from '../../hooks/useTransac
 import type { TransactionFormData, RecurringType } from '../../db/schema';
 import { useSavingsGoals } from '../../hooks/useSavingsGoals';
 import { usePaymentMethods } from '../../hooks/usePaymentMethods';
+import { useCreditCards } from '../../hooks/useCreditCards';
 import { formatDateForInput, parseDateInput } from '../../utils/dateUtils';
+import { ChevronDown } from 'lucide-react';
 
 const recurringTypes: { value: RecurringType; label: string }[] = [
     { value: 'weekly', label: 'Weekly' },
@@ -26,6 +28,7 @@ const initialFormData: TransactionFormData = {
     date: formatDateForInput(new Date()),
     description: '',
     paymentMethodId: 0,
+    creditCardId: undefined,
     cardName: '',
     isRecurring: false,
     savingsGoalId: undefined,
@@ -37,6 +40,7 @@ export function TransactionModal() {
     const { categories } = useCategories();
     const { goals } = useSavingsGoals();
     const { paymentMethods } = usePaymentMethods();
+    const { creditCards } = useCreditCards();
     const { transaction: editingTransaction } = useTransaction(editingTransactionId);
     const { addTransaction, updateTransaction } = useTransactionOperations();
 
@@ -46,9 +50,9 @@ export function TransactionModal() {
 
     const [isWithdrawal, setIsWithdrawal] = useState(false);
 
-    // Check if payment method requires card name
+    // Check if generic payment method requires card name
     const selectedMethod = paymentMethods.find((m: any) => m.id === formData.paymentMethodId);
-    const isCardPayment = selectedMethod?.name.toLowerCase().includes('card');
+    const isGenericCardPayment = formData.paymentMethodId > 0 && selectedMethod?.name.toLowerCase().includes('card');
     const isIncome = formData.type === 'income';
     const isSavings = formData.type === 'savings';
 
@@ -93,6 +97,7 @@ export function TransactionModal() {
                     date: formatDateForInput(new Date(editingTransaction.date)),
                     description: editingTransaction.description,
                     paymentMethodId: editingTransaction.paymentMethodId ?? 0,
+                    creditCardId: editingTransaction.creditCardId,
                     cardName: editingTransaction.cardName ?? '',
                     isRecurring: editingTransaction.isRecurring,
                     recurringType: editingTransaction.recurringType,
@@ -137,7 +142,7 @@ export function TransactionModal() {
             newErrors.categoryId = 'Please select a category';
         }
 
-        if (!isIncome && !isSavings && !formData.paymentMethodId) {
+        if (!isIncome && !isSavings && !formData.paymentMethodId && !formData.creditCardId) {
             newErrors.paymentMethodId = 'Please select a payment method';
         }
 
@@ -178,8 +183,9 @@ export function TransactionModal() {
                 categoryId: (isIncome || isSavings) ? undefined : formData.categoryId,
                 date: txDate,
                 description: formData.description,
-                paymentMethodId: isIncome ? undefined : formData.paymentMethodId,
-                cardName: isCardPayment && !isIncome && !isSavings ? formData.cardName : undefined,
+                paymentMethodId: (isIncome || formData.creditCardId) ? undefined : formData.paymentMethodId,
+                creditCardId: isIncome ? undefined : formData.creditCardId,
+                cardName: isGenericCardPayment && !isIncome && !isSavings ? formData.cardName : undefined,
                 isRecurring: formData.isRecurring,
                 recurringType: formData.isRecurring ? formData.recurringType : undefined,
                 savingsGoalId: formData.savingsGoalId,
@@ -365,20 +371,44 @@ export function TransactionModal() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
 
-                {/* Payment Method - Only for expenses */}
-                {/* Note: User might use payment method for savings too? Transfer? Let's hide for simplicity unless requested */}
+                {/* Payment Method - Custom Select to support Credit Cards */}
                 {!isIncome && !isSavings && (
-                    <Select
-                        label="Payment Method"
-                        options={paymentMethods.map(m => ({ value: m.id!.toString(), label: m.name }))}
-                        value={formData.paymentMethodId.toString()}
-                        onChange={(value) => setFormData({ ...formData, paymentMethodId: parseInt(value) })}
-                        error={errors.paymentMethodId}
-                    />
+                    <div className="space-y-1">
+                        <label className="label">Payment Method</label>
+                        <div className="relative">
+                            <select
+                                className={`input appearance-none cursor-pointer pr-10 ${errors.paymentMethodId ? 'input-error' : ''}`}
+                                value={formData.creditCardId ? `cc-${formData.creditCardId}` : `pm-${formData.paymentMethodId}`}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val.startsWith('cc-')) {
+                                        setFormData({ ...formData, creditCardId: parseInt(val.replace('cc-', '')), paymentMethodId: 0 });
+                                    } else {
+                                        setFormData({ ...formData, paymentMethodId: parseInt(val.replace('pm-', '')), creditCardId: undefined });
+                                    }
+                                }}
+                            >
+                                {creditCards.length > 0 && (
+                                    <optgroup label="Credit Cards">
+                                        {creditCards.map(c => (
+                                            <option key={`cc-${c.id}`} value={`cc-${c.id}`}>{c.name}</option>
+                                        ))}
+                                    </optgroup>
+                                )}
+                                <optgroup label="Other Methods">
+                                    {paymentMethods.map(m => (
+                                        <option key={`pm-${m.id}`} value={`pm-${m.id}`}>{m.name}</option>
+                                    ))}
+                                </optgroup>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                        </div>
+                        {errors.paymentMethodId && <p className="text-sm text-red-500 mt-1">{errors.paymentMethodId}</p>}
+                    </div>
                 )}
 
-                {/* Card Name - Only when using card */}
-                {!isIncome && !isSavings && isCardPayment && (
+                {/* Card Name - Only when using generic card */}
+                {!isIncome && !isSavings && isGenericCardPayment && (
                     <Input
                         label="Card Name"
                         placeholder="e.g., Chase Freedom, Amex Gold"

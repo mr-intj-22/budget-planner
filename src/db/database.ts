@@ -9,6 +9,7 @@ import type {
     ExtraState,
     MonthlyHealthScore,
     PaymentMethodEntry,
+    CreditCard,
 } from './schema';
 import { defaultCategories, defaultSettings } from './seeds';
 
@@ -33,6 +34,7 @@ export class BudgetPlannerDB extends Dexie {
     extraState!: Table<ExtraState, string>;
     healthScores!: Table<MonthlyHealthScore, number>;
     paymentMethods!: Table<PaymentMethodEntry, number>;
+    creditCards!: Table<CreditCard, number>;
 
     constructor() {
         super('BudgetPlannerDB');
@@ -346,6 +348,13 @@ export class BudgetPlannerDB extends Dexie {
                 delete (t as any).paymentMethod;
             });
         });
+
+        // Schema version 16 - Add creditCards table and link to transactions
+        this.version(16).stores({
+            creditCards: '++id, name, isActive',
+            transactions: '++id, categoryId, date, type, savingsGoalId, paymentMethodId, creditCardId, [date+type]'
+        });
+
         this.on('populate', async () => {
             await this.seedDefaultData();
         });

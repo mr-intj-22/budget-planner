@@ -144,7 +144,7 @@ export function useTransactionOperations() {
     ) => {
         const now = new Date();
 
-        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+        return db.transaction('rw', [db.transactions, db.savingsGoals, db.creditCards], async () => {
             // Update savings goal if linked
             if (transaction.savingsGoalId) {
                 const goal = await db.savingsGoals.get(transaction.savingsGoalId);
@@ -168,6 +168,33 @@ export function useTransactionOperations() {
                 }
             }
 
+            // Update credit card usage if linked
+            if (transaction.creditCardId) {
+                const card = await db.creditCards.get(transaction.creditCardId);
+                if (card) {
+                    let usageChange = 0;
+                    if (transaction.type === 'expense') {
+                        usageChange = transaction.amount;
+                    } else if (transaction.type === 'income') {
+                        usageChange = -transaction.amount;
+                    }
+                    await db.creditCards.update(card.id!, {
+                        currentUsage: Math.max(0, card.currentUsage + usageChange),
+                        updatedAt: new Date()
+                    });
+
+                    if (card.parentCardId) {
+                        const parentCard = await db.creditCards.get(card.parentCardId);
+                        if (parentCard) {
+                            await db.creditCards.update(parentCard.id!, {
+                                currentUsage: Math.max(0, parentCard.currentUsage + usageChange),
+                                updatedAt: new Date()
+                            });
+                        }
+                    }
+                }
+            }
+
             return db.transactions.add({
                 ...transaction,
                 createdAt: now,
@@ -177,7 +204,7 @@ export function useTransactionOperations() {
     };
 
     const updateTransaction = async (id: number, updates: Partial<Transaction>) => {
-        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+        return db.transaction('rw', [db.transactions, db.savingsGoals, db.creditCards], async () => {
             const original = await db.transactions.get(id);
             if (!original) throw new Error('Transaction not found');
 
@@ -198,6 +225,33 @@ export function useTransactionOperations() {
                     await db.savingsGoals.update(goal.id!, {
                         currentAmount: goal.currentAmount - originalContrib
                     });
+                }
+            }
+
+            // Revert original credit card usage if it existed
+            if (original.creditCardId) {
+                const card = await db.creditCards.get(original.creditCardId);
+                if (card) {
+                    let originalUsage = 0;
+                    if (original.type === 'expense') {
+                        originalUsage = original.amount;
+                    } else if (original.type === 'income') {
+                        originalUsage = -original.amount;
+                    }
+                    await db.creditCards.update(card.id!, {
+                        currentUsage: Math.max(0, card.currentUsage - originalUsage),
+                        updatedAt: new Date()
+                    });
+
+                    if (card.parentCardId) {
+                        const parentCard = await db.creditCards.get(card.parentCardId);
+                        if (parentCard) {
+                            await db.creditCards.update(parentCard.id!, {
+                                currentUsage: Math.max(0, parentCard.currentUsage - originalUsage),
+                                updatedAt: new Date()
+                            });
+                        }
+                    }
                 }
             }
 
@@ -225,6 +279,33 @@ export function useTransactionOperations() {
                 }
             }
 
+            // Apply new credit card usage if it exists
+            if (newTx.creditCardId) {
+                const card = await db.creditCards.get(newTx.creditCardId);
+                if (card) {
+                    let newUsage = 0;
+                    if (newTx.type === 'expense') {
+                        newUsage = newTx.amount;
+                    } else if (newTx.type === 'income') {
+                        newUsage = -newTx.amount;
+                    }
+                    await db.creditCards.update(card.id!, {
+                        currentUsage: Math.max(0, card.currentUsage + newUsage),
+                        updatedAt: new Date()
+                    });
+
+                    if (card.parentCardId) {
+                        const parentCard = await db.creditCards.get(card.parentCardId);
+                        if (parentCard) {
+                            await db.creditCards.update(parentCard.id!, {
+                                currentUsage: Math.max(0, parentCard.currentUsage + newUsage),
+                                updatedAt: new Date()
+                            });
+                        }
+                    }
+                }
+            }
+
             return db.transactions.update(id, {
                 ...updates,
                 updatedAt: new Date(),
@@ -233,7 +314,7 @@ export function useTransactionOperations() {
     };
 
     const deleteTransaction = async (id: number) => {
-        return db.transaction('rw', [db.transactions, db.savingsGoals], async () => {
+        return db.transaction('rw', [db.transactions, db.savingsGoals, db.creditCards], async () => {
             const original = await db.transactions.get(id);
             if (original?.savingsGoalId) {
                 const goal = await db.savingsGoals.get(original.savingsGoalId);
@@ -253,6 +334,34 @@ export function useTransactionOperations() {
                     });
                 }
             }
+
+            // Revert credit card usage if it existed
+            if (original?.creditCardId) {
+                const card = await db.creditCards.get(original.creditCardId);
+                if (card) {
+                    let usageChange = 0;
+                    if (original.type === 'expense') {
+                        usageChange = original.amount;
+                    } else if (original.type === 'income') {
+                        usageChange = -original.amount;
+                    }
+                    await db.creditCards.update(card.id!, {
+                        currentUsage: Math.max(0, card.currentUsage - usageChange),
+                        updatedAt: new Date()
+                    });
+
+                    if (card.parentCardId) {
+                        const parentCard = await db.creditCards.get(card.parentCardId);
+                        if (parentCard) {
+                            await db.creditCards.update(parentCard.id!, {
+                                currentUsage: Math.max(0, parentCard.currentUsage - usageChange),
+                                updatedAt: new Date()
+                            });
+                        }
+                    }
+                }
+            }
+
             return db.transactions.delete(id);
         });
     };

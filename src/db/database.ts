@@ -349,10 +349,36 @@ export class BudgetPlannerDB extends Dexie {
             });
         });
 
-        // Schema version 16 - Add creditCards table and link to transactions
-        this.version(16).stores({
+        // Schema version 17 - Added currentUsage to creditCards
+        this.version(17).stores({
             creditCards: '++id, name, isActive',
             transactions: '++id, categoryId, date, type, savingsGoalId, paymentMethodId, creditCardId, [date+type]'
+        }).upgrade(tx => {
+            return tx.table('creditCards').toCollection().modify(card => {
+                if (card.currentUsage === undefined) {
+                    card.currentUsage = 0;
+                }
+            });
+        });
+
+        // Schema version 18 - Added statementBalance to creditCards
+        this.version(18).stores({
+            creditCards: '++id, name, isActive',
+            transactions: '++id, categoryId, date, type, savingsGoalId, paymentMethodId, creditCardId, [date+type]'
+        }).upgrade(tx => {
+            return tx.table('creditCards').toCollection().modify(card => {
+                if (card.statementBalance === undefined) {
+                    card.statementBalance = 0;
+                }
+            });
+        });
+
+        // Schema version 19 - Added parentCardId to creditCards
+        this.version(19).stores({
+            creditCards: '++id, name, isActive, parentCardId',
+            transactions: '++id, categoryId, date, type, savingsGoalId, paymentMethodId, creditCardId, [date+type]'
+        }).upgrade(() => {
+            // No explicit data migration needed as parentCardId is optional
         });
 
         this.on('populate', async () => {
@@ -484,6 +510,10 @@ export class BudgetPlannerDB extends Dexie {
         let savings = 0;
 
         for (const tx of transactions) {
+            // IGNORE ALL TRANSACTIONS THAT WERE PAID/EARNED VIA CREDIT CARD
+            // This ensures credit cards do not draw from the user's current cash balance until explicitly settled
+            if (tx.creditCardId !== undefined) continue;
+
             if (tx.type === 'savings') {
                 // Savings: Positive amount = Deposit (Current -> Savings)
                 //          Negative amount = Withdrawal (Savings -> Current)

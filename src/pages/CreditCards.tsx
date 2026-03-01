@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, AlertCircle, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, AlertCircle, Calendar, DollarSign, X } from 'lucide-react';
 import { useCreditCards, useCreditCardOperations } from '../hooks/useCreditCards';
 import { CreditCardForm } from '../components/credit-cards/CreditCardForm';
 import { useSettings } from '../hooks/useSettings';
+import { usePaymentMethods } from '../hooks/usePaymentMethods';
 import { formatCurrency } from '../utils/currency';
 import type { CreditCard } from '../db/schema';
 import * as Icons from 'lucide-react';
 
 export function CreditCards() {
     const { creditCards, isLoading } = useCreditCards();
-    const { addCard, updateCard, deleteCard } = useCreditCardOperations();
+    const { addCard, updateCard, deleteCard, settleCard } = useCreditCardOperations();
     const { settings } = useSettings();
+    const { paymentMethods } = usePaymentMethods();
 
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingCard, setEditingCard] = useState<CreditCard | undefined>();
     const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+    const [settleCardId, setSettleCardId] = useState<number | null>(null);
+    const [settleAmount, setSettleAmount] = useState<string>('');
+    const [settlePaymentMethodId, setSettlePaymentMethodId] = useState<number | undefined>(undefined);
+    const [settleDate, setSettleDate] = useState<string>(new Date().toISOString().split('T')[0] || '');
 
     if (isLoading) {
         return (
@@ -47,6 +54,14 @@ export function CreditCards() {
         if (card.id) {
             await updateCard(card.id, { isActive: !card.isActive });
         }
+    };
+
+    const handleSettleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!settleCardId || !settlePaymentMethodId) return;
+        await settleCard(settleCardId, Number(settleAmount), settlePaymentMethodId, new Date(settleDate));
+        setSettleCardId(null);
+        setSettleAmount('');
     };
 
     const IconComponent = ({ name, className }: { name: string; className?: string }) => {
@@ -176,6 +191,12 @@ export function CreditCards() {
                                                     {formatCurrency(card.currentUsage, settings)}
                                                 </span>
                                             </div>
+                                            {(card.statementBalance > 0) && (
+                                                <div className="flex justify-between items-start text-xs text-amber-600 dark:text-amber-500 mb-1">
+                                                    <span>Statement Balance</span>
+                                                    <span>{formatCurrency(card.statementBalance, settings)}</span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between items-start text-xs text-slate-500 dark:text-slate-400 mb-2">
                                                 <span>Limit {formatCurrency(card.limit, settings)}</span>
                                                 <span>{card.limit > 0 ? `${usagePercentage.toFixed(1)}%` : ''}</span>
@@ -190,14 +211,23 @@ export function CreditCards() {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                                <Calendar className="w-4 h-4" />
-                                                <span>Statement: {card.statementDate}th</span>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                                <AlertCircle className="w-4 h-4" />
-                                                <span>Due: {card.dueDate}th</span>
-                                            </div>
+                                            {card.parentCardId ? (
+                                                <div className="col-span-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                                    <Icons.Link className="w-4 h-4" />
+                                                    <span>Linked to: {creditCards.find(c => c.id === card.parentCardId)?.name || 'Unknown'}</span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                                        <Calendar className="w-4 h-4" />
+                                                        <span>Statement: {card.statementDate}th</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        <span>Due: {card.dueDate}th</span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 
@@ -209,6 +239,21 @@ export function CreditCards() {
                                         >
                                             {card.isActive ? 'Mark as Inactive' : 'Mark as Active'}
                                         </button>
+                                        {!card.parentCardId && (
+                                            <button
+                                                onClick={() => {
+                                                    setSettleCardId(card.id!);
+                                                    setSettleAmount(card.statementBalance > 0 ? String(card.statementBalance) : String(card.currentUsage));
+                                                    if (paymentMethods.length > 0 && !settlePaymentMethodId) {
+                                                        setSettlePaymentMethodId(paymentMethods[0]?.id);
+                                                    }
+                                                }}
+                                                className="font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors flex items-center gap-1"
+                                            >
+                                                <DollarSign className="w-3 h-3" />
+                                                Settle Balance
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -226,6 +271,88 @@ export function CreditCards() {
                         setEditingCard(undefined);
                     }}
                 />
+            )}
+
+            {settleCardId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                                <DollarSign className="w-5 h-5 text-emerald-500" />
+                                Settle Credit Card
+                            </h2>
+                            <button
+                                onClick={() => setSettleCardId(null)}
+                                className="p-2 text-slate-400 hover:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSettleSubmit} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                    Payment Method
+                                </label>
+                                <select
+                                    required
+                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    value={settlePaymentMethodId || ''}
+                                    onChange={(e) => setSettlePaymentMethodId(Number(e.target.value))}
+                                >
+                                    <option value="" disabled>Select payment method</option>
+                                    {paymentMethods.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                                        <DollarSign className="w-4 h-4 text-slate-400" />
+                                        Amount to Pay
+                                    </label>
+                                    <input
+                                        type="number"
+                                        required
+                                        min="0.01"
+                                        step="0.01"
+                                        value={settleAmount}
+                                        onChange={(e) => setSettleAmount(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                                        <Calendar className="w-4 h-4 text-slate-400" />
+                                        Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        required
+                                        value={settleDate}
+                                        onChange={(e) => setSettleDate(e.target.value)}
+                                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"
+                                    />
+                                </div>
+                            </div>
+                            <div className="pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+                                <button
+                                    type="button"
+                                    onClick={() => setSettleCardId(null)}
+                                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium"
+                                >
+                                    Settle Amount
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             )}
         </div>
     );

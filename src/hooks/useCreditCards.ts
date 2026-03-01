@@ -2,54 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db/database';
 import type { CreditCard } from '../db/schema';
 
-export interface CreditCardWithUsage extends CreditCard {
-    currentUsage: number;
-}
-
 export function useCreditCards() {
     const cards = useLiveQuery(() => db.creditCards.orderBy('name').toArray());
 
-    const cardsWithUsage = useLiveQuery(async () => {
-        if (!cards) return undefined;
-
-        const enhancedCards: CreditCardWithUsage[] = [];
-
-        for (const card of cards) {
-            // Calculate usage based on expenses linked to this credit card.
-            // A more complex implementation would calculate this based on billing cycles
-            // and include payments made. For now, we sum up all time expenses.
-            // Or we just sum up this month's expenses? The prompt asks for "track limit, current usage, pay time".
-            // Let's compute overall lifetime usage (expenses - payments) by looking at transactions.
-            // Expenses increase usage, Income (like cashback/refund) or Transfer (payment) decreases it.
-            const transactions = await db.transactions
-                .where('creditCardId')
-                .equals(card.id!)
-                .toArray();
-
-            let usage = 0;
-            for (const tx of transactions) {
-                if (tx.type === 'expense') {
-                    usage += tx.amount;
-                } else if (tx.type === 'income') {
-                    usage -= tx.amount;
-                }
-                // If we treat savings as transfers: if a transfer is made paying the card, we could handle it here.
-                // But normally users might just add an 'income' to the card or 'expense' to the checking account 
-                // We'll keep it simple for now and rely on expenses and incomes linked to the card.
-            }
-
-            enhancedCards.push({
-                ...card,
-                currentUsage: usage > 0 ? usage : 0 // Ensure usage doesn't go below 0 visually
-            });
-        }
-
-        return enhancedCards;
-    }, [cards]);
-
     return {
-        creditCards: cardsWithUsage ?? [],
-        isLoading: cardsWithUsage === undefined,
+        creditCards: cards ?? [],
+        isLoading: cards === undefined,
     };
 }
 
@@ -77,9 +35,56 @@ export function useCreditCardOperations() {
         return db.creditCards.delete(id);
     };
 
+    const settleCard = async (id: number, amount: number, paymentMethodId: number, date: Date) => {
+        return db.transaction('rw', [db.creditCards, db.transactions, db.categories], async () => {
+            const card = await db.creditCards.get(id);
+            if (!card) throw new Error('Credit card not found');
+
+            // Deduct from current usage and statement balance
+            await db.creditCards.update(id, {
+                currentUsage: Math.max(0, card.currentUsage - amount),
+                statementBalance: Math.max(0, card.statementBalance - amount),
+                updatedAt: new Date()
+            });
+
+            // Proportionally reduce child cards' usage
+            if (card.currentUsage > 0) {
+                const reductionRatio = amount / card.currentUsage;
+                const childCards = await db.creditCards.where('parentCardId').equals(id).toArray();
+                for (const child of childCards) {
+                    const childReduction = child.currentUsage * reductionRatio;
+                    await db.creditCards.update(child.id!, {
+                        currentUsage: Math.max(0, child.currentUsage - childReduction),
+                        updatedAt: new Date()
+                    });
+                }
+            }
+
+            // Find a category for the payment (fallback to first available)
+            let category = await db.categories.where('name').equals('Debt Payback').first();
+            if (!category) {
+                category = await db.categories.toCollection().first();
+            }
+
+            // Log a global expense
+            await db.transactions.add({
+                categoryId: category?.id ?? 0,
+                amount: amount,
+                date: date,
+                description: `Payment to ${card.name}`,
+                type: 'expense',
+                isRecurring: false,
+                paymentMethodId: paymentMethodId > 0 ? paymentMethodId : undefined,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        });
+    };
+
     return {
         addCard,
         updateCard,
         deleteCard,
+        settleCard,
     };
 }

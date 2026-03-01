@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { CreditCard as CreditCardIcon, Calendar, DollarSign, X } from 'lucide-react';
+import { CreditCard as CreditCardIcon, Calendar, DollarSign, X, Link } from 'lucide-react';
 import type { CreditCard } from '../../db/schema';
+import { useCreditCards } from '../../hooks/useCreditCards';
 
 interface CreditCardFormProps {
     initialData?: CreditCard;
@@ -12,9 +13,18 @@ const NETWORKS = ['Visa', 'Mastercard', 'Amex', 'Discover', 'Other'];
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
 export function CreditCardForm({ initialData, onSubmit, onClose }: CreditCardFormProps) {
+    const { creditCards } = useCreditCards();
+
+    // Filter available parent cards (must not be the card itself, and ideally we shouldn't nest)
+    // For simplicity, we only allow linking to cards that are NOT already linked to something else.
+    const availableParents = creditCards.filter(c => c.id !== initialData?.id && !c.parentCardId);
+
     const [name, setName] = useState(initialData?.name || '');
     const [network, setNetwork] = useState(initialData?.network || 'Visa');
     const [limit, setLimit] = useState(initialData?.limit ? String(initialData.limit) : '');
+    const [parentCardId, setParentCardId] = useState<string>(initialData?.parentCardId ? String(initialData.parentCardId) : '');
+    const [currentUsage, setCurrentUsage] = useState(initialData?.currentUsage ? String(initialData.currentUsage) : '0');
+    const [statementBalance, setStatementBalance] = useState(initialData?.statementBalance ? String(initialData.statementBalance) : '0');
     const [statementDate, setStatementDate] = useState(initialData?.statementDate ? String(initialData.statementDate) : '1');
     const [dueDate, setDueDate] = useState(initialData?.dueDate ? String(initialData.dueDate) : '15');
     const [color, setColor] = useState<string>(initialData?.color ?? '#6366f1');
@@ -30,8 +40,11 @@ export function CreditCardForm({ initialData, onSubmit, onClose }: CreditCardFor
                 name,
                 network,
                 limit: Number(limit) || 0,
-                statementDate: Number(statementDate) || 1,
-                dueDate: Number(dueDate) || 15,
+                currentUsage: Number(currentUsage) || 0,
+                parentCardId: parentCardId ? Number(parentCardId) : undefined,
+                statementBalance: parentCardId ? 0 : (Number(statementBalance) || 0),
+                statementDate: parentCardId ? 1 : (Number(statementDate) || 1),
+                dueDate: parentCardId ? 1 : (Number(dueDate) || 15),
                 color,
                 icon,
                 isActive,
@@ -92,54 +105,110 @@ export function CreditCardForm({ initialData, onSubmit, onClose }: CreditCardFor
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                                <Link className="w-4 h-4 text-slate-400" />
+                                Link to Main Account
+                            </label>
+                            <select
+                                value={parentCardId}
+                                onChange={(e) => setParentCardId(e.target.value)}
+                                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            >
+                                <option value="">None (Main Account)</option>
+                                {availableParents.map(parent => (
+                                    <option key={parent.id} value={parent.id}>{parent.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-slate-400" />
+                            Credit Limit
+                        </label>
+                        <input
+                            type="number"
+                            required
+                            min="0"
+                            step="100"
+                            value={limit}
+                            onChange={(e) => setLimit(e.target.value)}
+                            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                            placeholder="5000"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                                 <DollarSign className="w-4 h-4 text-slate-400" />
-                                Limit
+                                Current Balance
                             </label>
                             <input
                                 type="number"
                                 required
                                 min="0"
-                                step="100"
-                                value={limit}
-                                onChange={(e) => setLimit(e.target.value)}
+                                step="any"
+                                value={currentUsage}
+                                onChange={(e) => setCurrentUsage(e.target.value)}
                                 className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                placeholder="5000"
+                                placeholder="0.00"
                             />
                         </div>
+                        {(!parentCardId) && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1" title="What was your balance on your last statement?">
+                                    <DollarSign className="w-4 h-4 text-slate-400" />
+                                    Statement Balance
+                                </label>
+                                <input
+                                    type="number"
+                                    required={!parentCardId}
+                                    min="0"
+                                    step="any"
+                                    value={statementBalance}
+                                    onChange={(e) => setStatementBalance(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1" title="Day of the month the statement closes">
-                                <Calendar className="w-4 h-4 text-slate-400" />
-                                Statement Date
-                            </label>
-                            <input
-                                type="number"
-                                required
-                                min="1"
-                                max="31"
-                                value={statementDate}
-                                onChange={(e) => setStatementDate(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
+                    {!parentCardId && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1" title="Day of the month the statement closes">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    Statement Date
+                                </label>
+                                <input
+                                    type="number"
+                                    required={!parentCardId}
+                                    min="1"
+                                    max="31"
+                                    value={statementDate}
+                                    onChange={(e) => setStatementDate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1" title="Day of the month the payment is due">
+                                    <Calendar className="w-4 h-4 text-slate-400" />
+                                    Due Date
+                                </label>
+                                <input
+                                    type="number"
+                                    required={!parentCardId}
+                                    min="1"
+                                    max="31"
+                                    value={dueDate}
+                                    onChange={(e) => setDueDate(e.target.value)}
+                                    className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1" title="Day of the month the payment is due">
-                                <Calendar className="w-4 h-4 text-slate-400" />
-                                Due Date
-                            </label>
-                            <input
-                                type="number"
-                                required
-                                min="1"
-                                max="31"
-                                value={dueDate}
-                                onChange={(e) => setDueDate(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                            />
-                        </div>
-                    </div>
+                    )}
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

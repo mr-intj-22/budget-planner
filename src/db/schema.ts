@@ -52,13 +52,16 @@ export interface CreditCard {
     name: string;
     network: string; // e.g., 'Visa', 'Mastercard', 'Amex'
     limit: number;
+    currentUsage: number; // Persistent tracking of outstanding balance
+    statementBalance: number; // Amount due for the next cycle
     statementDate: number; // 1-31
     dueDate: number; // 1-31
     color: string;
     icon: string;
     isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    parentCardId?: number; // For sub-cards sharing the same account
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface Transaction {

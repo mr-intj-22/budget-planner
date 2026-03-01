@@ -118,8 +118,9 @@ export async function importBackup(file: File): Promise<{ success: boolean; mess
                 if (backup.creditCards?.length) {
                     const cards = backup.creditCards.map(c => ({
                         ...c,
-                        createdAt: new Date(c.createdAt),
-                        updatedAt: new Date(c.updatedAt),
+                        statementBalance: c.statementBalance || 0,
+                        createdAt: c.createdAt ? new Date(c.createdAt) : new Date(),
+                        updatedAt: c.updatedAt ? new Date(c.updatedAt) : new Date(),
                     }));
                     await db.creditCards.bulkAdd(cards);
                 }
